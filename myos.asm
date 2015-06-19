@@ -8,7 +8,7 @@ mov ds, ax
 mov ah, 02h
 mov dx, 0000h
 int 10h
-;----------------------------------------
+;----------------------------------------	
 loadup:
 
 	mov ah, 00h
@@ -118,6 +118,33 @@ mcdn:
 	mov dl, 00h
 	int 10h
 	jmp typer
+badhdr:
+	mov ah, 00h
+	mov al, 03h
+	int 10h
+	mov ah, 0Eh
+	mov al, 'B'
+	int 10h
+	mov al, 'A'
+	int 10h
+	mov al, 'D'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, 'H'
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'A'
+	int 10h
+	mov al, 'D'
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'R'
+	int 10h
+	cli
+	hlt
 stop:
 hlt
 ;----------------------------------------
