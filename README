@@ -1,0 +1,41 @@
+This Git repository contains the source and binary code for NOS.
+
+This README file was created on FRI JUN 19 at 11:36:42. For updates, check this date regularly.
+
+This readme assumes that you have tried the OS without reading this file. I do that a lot myself,
+and you really shouldn't as this file contains important information.
+
+KNOWN BUGS AS OF THIS DATE:
+- Backspace key works, but teleports the cursor to the center of the screen.
+- Screen does not scroll down.
+- The keyboard works, but currently unprocessed keys like arrow and home, etc. display spaces
+
+FIXED BUGS AS OF THIS DATE:
++ Fixed keyboard not responding
++ Fixed only spaces will type
++ Fixed stack issues
++ Fixed version display issues
++ Removed Easter Eggs (trying to fit as much code in the MBR as possible)
++ Began development on new file system
++ Replaced INT 10-09 with INT 10-0E
+
+CREATING A FLOPPY FROM THE IMAGES
+To create an OS image, first compile the .asm files into their own seperate .img or .bin files (I have
+started doing this before I upload now -- your welcome :) ) with the following commands:
+
+$ fasm myos.asm myos.bin
+$ fasm int21.asm int21.bin
+
+Then merge the files together to create one image file:
+
+$ cat myos.bin int21.bin > NOS.img
+
+And now you have a bootable image! In case that you wanted to write this image to a floppy disk, do the folllowing command:
+
+$ dd if=NOS.img of=/dev/fd0
+
+This should about cover it.
+
+##EOF##
+
+##END README##
