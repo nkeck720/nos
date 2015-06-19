@@ -75,11 +75,13 @@ loadup:
 	int 10h
 	mov al, '.'
 	int 10h
-	mov al, '1'
+	mov al, '2'
 	int 10h
 	;; Begin setting up the environment in which the user will type
 	mov bl, 07h
 typer:
+	cmp dl, 80d
+	je  print_enter
 	mov ah, 00h
 	int 16h
 	cmp al, 0Dh
@@ -111,7 +113,11 @@ mcdn:
 	mov ah, 07h
 	mov al, 01h
 	int 10h
-	ret
+	mov ah, 02h
+	inc dh
+	mov dl, 00h
+	int 10h
+	jmp typer
 stop:
 hlt
 ;----------------------------------------
