@@ -119,6 +119,7 @@ mcdn:
 	int 10h
 	jmp typer
 badhdr:
+    ;; Bad header message for when I get working code to check the header
 	mov ah, 00h
 	mov al, 03h
 	int 10h
