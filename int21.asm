@@ -14,13 +14,7 @@ print_string:
 	cmp al, 00h		; If null then print a $
 	je  print_ds
 	;; Go ahead and print the character since it is not a handled char
-	mov ah, 09h
-	int 10h
-	;; Move the cursor to the right
-	cmp dl, 80d
-	je  line_dn		; If the end of a line is reached, we want to scroll down one line
-	inc dl			; If not, then move the cursor to the right
-	mov ah, 02h
+	mov ah, 0Eh
 	int 10h
 	;; Increment the RAM address pointer and continue
 	inc bx
@@ -28,22 +22,8 @@ print_string:
 print_ds:
 	;; Since the special char to terminate the line is a $, we want to print an actual $
 	;; if the stored char is null (00h)
-	mov ah, 09h
+	mov ah, 0Eh
 	mov al, 24h
-	int 10h
-	cmp dl, 80d
-	je  line_dn
-	mov ah, 02h
-	inc dl
-	jmp print_string
-line_dn:
-	;; Scroll down a line and move the cursor to the beginning of said line
-	mov ah, 07h
-	mov al, 01h
-	int 10h
-	mov ah, 02h
-	mov dl, 00h
-	inc dh
 	int 10h
 	jmp print_string
 line_done:
