@@ -22,7 +22,8 @@ FIXED BUGS AS OF THIS DATE:
 + Made compilation process easier
 
 CREATING A FLOPPY FROM THE IMAGES
-To create an OS image, compile the image.asm file into an .img or .bin file with the following command:
+To create an OS image, compile the .asm files into their own .img files. Then comile the image.asm file into
+an .img or .bin file with the following command:
 
 $ fasm image.asm NOS.img
 
