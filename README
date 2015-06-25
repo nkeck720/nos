@@ -11,7 +11,6 @@ KNOWN BUGS AS OF THIS DATE:
 - The keyboard works, but currently unprocessed keys like arrow and home, etc. display spaces
 
 FIXED BUGS AS OF THIS DATE:
-+ Fixed keyboard not responding
 + Fixed only spaces will type
 + Fixed stack issues
 + Fixed version display issues
@@ -20,6 +19,7 @@ FIXED BUGS AS OF THIS DATE:
 + Replaced INT 10-09 with INT 10-0E
 + Added a header (0xFF80) to system-reserved sectors (such as the MBR and INT 21 sector)
 + Made compilation process easier
++ Added INT 21 functions
 
 CREATING A FLOPPY FROM THE IMAGES
 To create an OS image, compile the .asm files into their own .img files. Then comile the image.asm file into
