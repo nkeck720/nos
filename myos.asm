@@ -57,26 +57,42 @@ loadup:
 	mov ah, 00h
 	mov al, 03h
 	int 10h
-	;; Display 'NOS 1.0.1' message
-	mov ah, 0Eh
+	;; Display 'NOS 1.0.3' message (Using new INT 21 function)
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0000h
+	mov ah, 00h
 	mov al, 'N'
-	int 10h
+	mov [es:bx], al		;Trying to work around 'operand size' bug
+	inc bx
 	mov al, 'O'
-	int 10h
+	mov [es:bx], al
+	inc bx
 	mov al, 'S'
-	int 10h
+	mov [es:bx], al
+	inc bx
 	mov al, 20h
-	int 10h
+	mov [es:bx], al
+	inc bx
 	mov al, '1'
-	int 10h
+	mov [es:bx], al
+	inc bx
 	mov al, '.'
-	int 10h
+	mov [es:bx], al
+	inc bx
 	mov al, '0'
-	int 10h
+	mov [es:bx], al
+	inc bx
 	mov al, '.'
-	int 10h
-	mov al, '2'
-	int 10h
+	mov [es:bx], al
+	inc bx
+	mov al, '3'
+	mov [es:bx], al
+	inc bx
+	mov al, '$'
+	mov [es:bx], al		;Terminating char
+	mov bx, 0000h
+	int 21h
 	;; Begin setting up the environment in which the user will type
 	mov bl, 07h
 typer:
