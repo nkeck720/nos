@@ -6,7 +6,7 @@ mov sp, 4096d
 mov ax, 7C0h
 mov ds, ax	
 mov ah, 02h
-mov dx, 0000h
+mov dx, 0000h	
 int 10h
 ;----------------------------------------	
 loadup:
@@ -14,156 +14,125 @@ loadup:
 	mov ah, 00h
 	mov dl, 00h
 	int 13h
-	mov ah, 01h
-	mov dl, 00h
-	int 13h
-	cmp ah, 00h
-	jne stop
-	;; Load the int 21h code (for future implementation)
+	jc  reset_err
+	;; Clear the screen
+	mov ah, 00h
+	mov al, 03h
+	int 10h
+	;; Display 'NOS 1.0.4' message
+	mov ah, 0Eh
+	mov al, 'N'
+	int 10h
+	mov al, 'O'
+	int 10h
+	mov al, 'S'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, '1'
+	int 10h
+	mov al, '.'
+	int 10h
+	mov al, '0'
+	int 10h
+	mov al, '.'
+	int 10h
+	mov al, '4'
+	int 10h
+	call print_enter
+kernel_load:
+	;; Load the filesystem into RAM
 	mov ah, 02h
 	mov al, 01h
 	mov ch, 00h
 	mov dh, 00h
 	mov cl, 01h
 	mov dl, 00h
-	mov bx, 1400h
-	mov es, bx
-	mov bx, 0000h
-	int 13h
-	mov ah, 01h
-	mov dl, 00h
-	int 13h
-	cmp ah, 00h
-	jne stop
-	;; Set up the IVT to recognize my int 21h
-	cli
-	mov ax, 0000h
-	mov es, ax
-	mov al, 21h
-	mov bl, 04h
-	mul bl
-	add ax, 02h
-	mov bx, ax
-	mov dx, 1400h
-	mov [es:bx], dx
-	mov al, 21h
-	mov bl, 04h
-	mul bl
-	mov bx, ax
-	mov dx, 0000h
-	mov [es:bx], dx
-	sti
-	;; Clear the screen
-	mov ah, 00h
-	mov al, 03h
-	int 10h
-	;; Display 'NOS 1.0.3' message (Using new INT 21 function)
 	mov bx, 2000h
 	mov es, bx
 	mov bx, 0000h
-	mov ah, 00h
-	mov al, 'N'
-	mov [es:bx], al		;Trying to work around 'operand size' bug
+	int 13h
+	jc  int13_err
+	;; Read kernel CHS and length from RAM
+	mov ch, [es:bx]
 	inc bx
-	mov al, 'O'
-	mov [es:bx], al
+	mov dh, [es:bx]
 	inc bx
-	mov al, 'S'
-	mov [es:bx], al
+	mov cl, [es:bx]
 	inc bx
-	mov al, 20h
-	mov [es:bx], al
-	inc bx
-	mov al, '1'
-	mov [es:bx], al
-	inc bx
-	mov al, '.'
-	mov [es:bx], al
-	inc bx
-	mov al, '0'
-	mov [es:bx], al
-	inc bx
-	mov al, '.'
-	mov [es:bx], al
-	inc bx
-	mov al, '3'
-	mov [es:bx], al
-	inc bx
-	mov al, '$'
-	mov [es:bx], al		;Terminating char
+	mov al, [es:bx]
+	cmp al, 0FFh
+	je  non_sys_disk
+	mov ah, 02h
+	mov dl, 00h
+	mov bx, 1000h
+	mov es, bx
 	mov bx, 0000h
-	int 21h
-	;; Begin setting up the environment in which the user will type
-	mov bl, 07h
-typer:
-	cmp dl, 80d
-	je  print_enter
-	mov ah, 00h
-	int 16h
-	cmp al, 0Dh
-	je  print_enter
-	cmp al, 08h
-	je  print_back
-	mov ah, 09h
-	int 10h
+	int 13h
+	jc  int13_err
+	;; jump to the kernel
+	jmp 1000h:0000h
+stop:
+	cli
+	hlt
+	jmp stop
+non_sys_disk:
+	;; A non-system disk is being booted from
 	mov ah, 0Eh
+	mov al, 'F'
 	int 10h
-	jmp typer
-print_enter:
-	cmp dh, 25d
-	je  mcdn
-	mov ah, 02h
-	inc dh
-	mov dl, 00h
+	mov al, 'S'
 	int 10h
-	jmp typer
-print_back:
-	mov ah, 02h
-	dec dl
-	int 10h
-	mov ah, 09h
-	mov al, 20h
-	int 10h
-	jmp typer
-mcdn:
-	mov ah, 07h
-	mov al, 01h
-	int 10h
-	mov ah, 02h
-	inc dh
-	mov dl, 00h
-	int 10h
-	jmp typer
-badhdr:
-    ;; Bad header message for when I get working code to check the header
-	mov ah, 00h
-	mov al, 03h
-	int 10h
-	mov ah, 0Eh
 	mov al, 'B'
 	int 10h
-	mov al, 'A'
-	int 10h
-	mov al, 'D'
-	int 10h
 	mov al, 20h
-	int 10h
-	mov al, 'H'
-	int 10h
-	mov al, 'E'
-	int 10h
-	mov al, 'A'
-	int 10h
-	mov al, 'D'
 	int 10h
 	mov al, 'E'
 	int 10h
 	mov al, 'R'
 	int 10h
-	cli
-	hlt
-stop:
-hlt
-;----------------------------------------
+	int 10h			;Char should still be in AL
+	jmp stop
+int13_err:
+	mov ah, 0Eh
+	mov al, 'I'
+	int 10h
+	mov al, '1'
+	int 10h
+	mov al, '3'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'R'
+	int 10h
+	int 10h			;Again, char should still be in AL
+	jmp stop
+reset_err:
+	mov ah, 0Eh
+	mov al, 'R'
+	int 10h
+	mov al, 'S'
+	int 10h
+	mov al, 'T'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'R'
+	int 10h
+	int 10h
+print_enter:
+	mov ah, 03h
+	int 10h
+	mov ah, 02h
+	inc dh
+	mov dl, 00h
+	int 10h
+	ret
+;---------------------------------------- 
+; Fit this in the MBR and add boot signature
 times 510-($-$$) db 0
 dw 0xAA55
