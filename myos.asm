@@ -46,7 +46,7 @@ kernel_load:
 	mov al, 01h
 	mov ch, 00h
 	mov dh, 00h
-	mov cl, 01h
+	mov cl, 02h
 	mov dl, 00h
 	mov bx, 2000h
 	mov es, bx
