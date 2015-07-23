@@ -62,6 +62,12 @@ interpret_cmd:
 	mov ah, 0Eh
 	mov al, 0Dh
 	int 10h
+	mov ah, 03h
+	int 10h
+	mov ah, 02h
+	inc dl
+	mov dh, 00h
+	int 10h
 	;; interpretation code goes here
 	mov bx, 1000h
 clear_loop:	
