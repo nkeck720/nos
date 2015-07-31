@@ -24,6 +24,7 @@ beep_init:
 	mov cx, 000Fh
 	mov dx, 4240h
 	int 15h
+	call stopsound
 prompt_loop:
 	mov ah, 0Eh
 	mov al, 0Dh
