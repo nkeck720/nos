@@ -16,6 +16,14 @@ init_kernel:
 	;; Display the prompt in a loop, for now not interpreting the commands
 	;; using RAM locations 1000:1000-1000:10FF for command line entered
 	mov bx, 1000h
+beep_init:
+	;; Show that the kernel has been loaded by beeping the PC speaker
+	mov cx, 1000d
+	call startsound
+	mov ah, 86h
+	mov cx, 000Fh
+	mov dx, 4240h
+	int 15h
 prompt_loop:
 	mov ah, 0Eh
 	mov al, 0Dh
@@ -91,5 +99,38 @@ print_backspace:
 	mov al, 20h
 	int 10h
 	jmp prompt_loop
+startsound:			;Not my own software bit, got this function
+				;edaboard.com
+	;; CX=Frequency in Hertz. Destroys AX and DX.
+	cmp cx, 014h
+	jb  startsound_done	;Call stopsound
+	in  al, 61h
+	or  al, 003h
+	dec ax
+	out 061h, al		;Turn and gate on; turn timer off
+	mov dx, 00012h		;High word of 1193180
+	mov ax, 034DCh		;Low word of 1193180
+	div cx
+	mov dx, ax
+	mov al, 0B6h
+	pushf
+	cli			;!!!
+	out 043h, al
+	mov al, dl
+	out 042h, al
+	mov al, dh
+	out 042h, al
+	popf
+	in  al, 061h
+	or  al, 003h
+	out 61h, al
+startsound_done:
+	ret
+stopsound:			;Destroys AL. Again, not my own code in this routine. From edaboard.com.
+	in  al, 061h
+	and al, 0FCh
+	out 061h, al
+	ret
+	
 ;; Set to two blocks
 times 1020-($-$$) db 0
