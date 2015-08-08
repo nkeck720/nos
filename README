@@ -1,10 +1,5 @@
 This Git repository contains the source and binary code for NOS.
 
-This README file was created on FRI JUN 19 at 13:12:35. For updates, check this date regularly.
-
-This readme assumes that you have tried the OS without reading this file. I do that a lot myself,
-and you really shouldn't as this file contains important information.
-
 KNOWN BUGS AS OF THIS DATE:
 - Backspace key works, but teleports the cursor to the center of the screen.
 - Screen does not scroll down.
