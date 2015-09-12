@@ -1,5 +1,48 @@
 	use16
+disp_check:
+	;; Set display mode
+	mov ah, 00h
+	mov al, 03h
+	int 10h
+	;; Check the disply for proper operation
+	mov ah, 09h
+	mov al, '#'
+	mov cx, 0FFFFh
+	int 10h
+	mov ah, 86h
+	mov cx, 000Fh
+	mov dx, 4240h
+	int 15h
+	mov ah, 09h
+	mov al, ' '
+	mov cx, 0FFFFh
+	int 10h
+	xor ax, ax
+	mov bx, ax
+	mov cx, ax
+	mov dx, ax
 init_kernel:
+	;; Display 'NOS 1.0.4' message
+	mov ah, 0Eh
+	mov al, 'N'
+	int 10h
+	mov al, 'O'
+	int 10h
+	mov al, 'S'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, '1'
+	int 10h
+	mov al, '.'
+	int 10h
+	mov al, '0'
+	int 10h
+	mov al, '.'
+	int 10h
+	mov al, '4'
+	int 10h
+	call print_enter
 	;; Here we want to overwrite the MBR code and use it for the stack.
 	mov bx, 0000h
 	mov es, bx
@@ -7,8 +50,10 @@ init_kernel:
 	call clear_mbr
 	mov ax, 0000h
 	mov ss, ax
+	mov es, ax
 	mov ax, 7C00h
 	mov sp, ax
+	xor ax, ax
 	xor bx, bx
 	;; Begin init of kernel (display prompt, prep mem, etc.)
 	;; Begin by setting ES to 0000, and it will be used for program segments
@@ -16,6 +61,10 @@ init_kernel:
 	;; Display the prompt in a loop, for now not interpreting the commands
 	;; using RAM locations 1000:1000-1000:10FF for command line entered
 	mov bx, 1000h
+	push cx
+	mov cx, 1000h
+	mov ds, cx
+	pop cx
 beep_init:
 	;; Show that the kernel has been loaded by beeping the PC speaker
 	mov cx, 1000d
@@ -42,11 +91,8 @@ prompt_loop:
 	jmp interpret_cmd
 prompt_2:	
 	mov ah, 0Eh
-	int 10h			;Char is already in AL
-	mov cx, 1000h
-	mov ds, cx
+	int 10h 		;Char is already in AL
 	mov [ds:bx], al
-	mov cx, 0000h
 	mov ah, 03h
 	int 10h
 	mov ah, 02h
@@ -132,6 +178,13 @@ stopsound:			;Destroys AL. Again, not my own code in this routine. From edaboard
 	and al, 0FCh
 	out 061h, al
 	ret
-	
+print_enter:
+	mov ah, 03h
+	int 10h
+	mov ah, 02h
+	inc dh
+	mov dl, 00h
+	int 10h
+	ret
 ;; Set to two blocks
-times 1020-($-$$) db 0
+times 1024-($-$$) db 0

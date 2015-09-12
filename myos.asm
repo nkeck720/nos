@@ -4,7 +4,10 @@ mov ax, 9ch
 mov ss, ax
 mov sp, 4096d
 mov ax, 7C0h
-mov ds, ax	
+mov ds, ax
+mov ah, 00h
+mov al, 03h
+int 10h
 mov ah, 02h
 mov dx, 0000h	
 int 10h
@@ -19,27 +22,7 @@ loadup:
 	mov ah, 00h
 	mov al, 03h
 	int 10h
-	;; Display 'NOS 1.0.4' message
-	mov ah, 0Eh
-	mov al, 'N'
-	int 10h
-	mov al, 'O'
-	int 10h
-	mov al, 'S'
-	int 10h
-	mov al, 20h
-	int 10h
-	mov al, '1'
-	int 10h
-	mov al, '.'
-	int 10h
-	mov al, '0'
-	int 10h
-	mov al, '.'
-	int 10h
-	mov al, '4'
-	int 10h
-	call print_enter
+
 kernel_load:
 	;; Load the filesystem into RAM
 	mov ah, 02h
@@ -91,7 +74,7 @@ non_sys_disk:
 	int 10h
 	mov al, 'R'
 	int 10h
-	int 10h			;Char should still be in AL
+	int 10h 		;Char should still be in AL
 	jmp stop
 int13_err:
 	mov ah, 0Eh
@@ -107,7 +90,7 @@ int13_err:
 	int 10h
 	mov al, 'R'
 	int 10h
-	int 10h			;Again, char should still be in AL
+	int 10h 		;Again, char should still be in AL
 	jmp stop
 reset_err:
 	mov ah, 0Eh
@@ -124,14 +107,7 @@ reset_err:
 	mov al, 'R'
 	int 10h
 	int 10h
-print_enter:
-	mov ah, 03h
-	int 10h
-	mov ah, 02h
-	inc dh
-	mov dl, 00h
-	int 10h
-	ret
+
 ;---------------------------------------- 
 ; Fit this in the MBR and add boot signature
 times 510-($-$$) db 0

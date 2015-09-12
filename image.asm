@@ -1,8 +1,6 @@
 	;; Use this to write to whole floppy
-	file 'myos.img'
-	file 'fsb.img'
-	db 0FFh
-	db 80h
-	file 'kernel.img'
+	file 'myos.bin'      ;Bootsector
+	file 'fsb.bin'	     ;FSB
+	file 'kernel.bin'    ;Kernel
 	times 1474560-($-$$) db 0
 	
