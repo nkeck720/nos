@@ -1,22 +1,5 @@
 	use16
 disp_check:
-	;; Set display mode
-	mov ah, 00h
-	mov al, 03h
-	int 10h
-	;; Check the disply for proper operation
-	mov ah, 09h
-	mov al, '#'
-	mov cx, 0FFFFh
-	int 10h
-	mov ah, 86h
-	mov cx, 000Fh
-	mov dx, 4240h
-	int 15h
-	mov ah, 09h
-	mov al, ' '
-	mov cx, 0FFFFh
-	int 10h
 	xor ax, ax
 	mov bx, ax
 	mov cx, ax
