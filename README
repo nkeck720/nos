@@ -13,7 +13,7 @@ FIXED BUGS AS OF THIS DATE:
 + Fixed version display issues
 + Removed Easter Eggs (trying to fit as much code in the MBR as possible)
 + Replaced INT 10-09 with INT 10-0E
-+ Added a header (0xFF80) to system-reserved sectors (such as the MBR and INT 21 sector)
++ Removed header (0xFF80) to system-reserved sectors (such as the MBR and INT 21 sector) (was causing code issues)
 
 CREATING A FLOPPY FROM THE IMAGES
 To compile the OS, use the following command:
