@@ -32,10 +32,9 @@ init_kernel:
 	mov bx, 7C00h
 	call clear_mbr
 	mov ax, 0000h
+	mov bx, 7C00h
 	mov ss, ax
-	mov es, ax
-	mov ax, 7C00h
-	mov sp, ax
+	mov sp, bx
 	xor ax, ax
 	xor bx, bx
 	;; Begin init of kernel (display prompt, prep mem, etc.)
@@ -79,7 +78,7 @@ prompt_2:
 	mov ah, 03h
 	int 10h
 	mov ah, 02h
-	inc dl
+	inc dh
 	int 10h
 	cmp bx, 10FFh
 	jne prompt_3
@@ -113,12 +112,13 @@ clear_loop:
 	cmp bx, 1100h
 	jne clear_cmd
 	jmp prompt_loop
-clear_cmd:	
+clear_cmd:
 	mov bx, 1000h
+c1:	
 	mov dl, 00h
 	mov [ds:bx], dl
 	inc bx
-	jmp clear_loop
+	jmp c1
 print_backspace:
 	mov ah, 03h
 	int 10h
