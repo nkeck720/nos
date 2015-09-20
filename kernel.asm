@@ -4,6 +4,7 @@ disp_check:
 	mov bx, ax
 	mov cx, ax
 	mov dx, ax
+	mov si, ax
 init_kernel:
 	;; Display 'NOS 1.0.4' message
 	mov ah, 0Eh
@@ -23,7 +24,7 @@ init_kernel:
 	int 10h
 	mov al, '.'
 	int 10h
-	mov al, '4'
+	mov al, '5'
 	int 10h
 	call print_enter
 	;; Here we want to overwrite the MBR code and use it for the stack.
@@ -70,17 +71,18 @@ prompt_loop:
 	je  print_backspace
 	cmp al, 0Dh
 	jne prompt_2
+	call print_enter
 	jmp interpret_cmd
 prompt_2:	
 	mov ah, 0Eh
 	int 10h 		;Char is already in AL
-	mov [ds:bx], al
+	mov [ds:si], al
 	mov ah, 03h
 	int 10h
 	mov ah, 02h
 	inc dh
 	int 10h
-	cmp bx, 10FFh
+	cmp si, 10FFh
 	jne prompt_3
 	call interpret_cmd
 prompt_3:
