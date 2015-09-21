@@ -21,3 +21,14 @@ To compile the OS, use the following command:
 $ ./compile.sh
 
 This will compile the OS into a .img file called NOS.img (floppy image file) and will attempt to write the image to /dev/fd0 (drive A: in DOS). If you don't want to write it to a physical floppy disk, just leave the drive empty and the command will leave the image.
+
+For those using FASM for Windows:
+
+Compile each of the asm files, in this order:
+
+myos.asm
+fsb.asm
+kernel.asm
+image.asm
+
+The 'image.bin' output file is what will be used as an image file. (Rename it if you wish to image.img).
