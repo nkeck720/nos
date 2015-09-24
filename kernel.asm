@@ -86,7 +86,7 @@ prompt_2:
 	jne prompt_3
 	call interpret_cmd
 prompt_3:
-	inc bx
+	inc si
 	jmp prompt_loop
 clear_mbr:
 	cmp bx, 7E00h
@@ -120,7 +120,8 @@ c1:
 	mov dl, 00h
 	mov [ds:bx], dl
 	inc bx
-	jmp c1
+	cmp bx, 10FFh
+	jmp clear_loop
 print_backspace:
 	mov ah, 03h
 	int 10h
