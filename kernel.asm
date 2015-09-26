@@ -121,7 +121,8 @@ c1:
 	mov [ds:bx], dl
 	inc bx
 	cmp bx, 10FFh
-	jmp clear_loop
+	jne clear_loop
+	jmp prompt_loop
 print_backspace:
 	mov ah, 03h
 	int 10h
