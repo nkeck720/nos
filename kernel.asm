@@ -1,177 +1,99 @@
 	use16
-disp_check:
-	xor ax, ax
-	mov bx, ax
-	mov cx, ax
-	mov dx, ax
-	mov si, ax
-init_kernel:
-	;; Display 'NOS 1.0.4' message
-	mov ah, 0Eh
-	mov al, 'N'
-	int 10h
-	mov al, 'O'
-	int 10h
-	mov al, 'S'
-	int 10h
-	mov al, 20h
-	int 10h
-	mov al, '1'
-	int 10h
-	mov al, '.'
-	int 10h
-	mov al, '0'
-	int 10h
-	mov al, '.'
-	int 10h
-	mov al, '5'
-	int 10h
-	call print_enter
-	;; Here we want to overwrite the MBR code and use it for the stack.
-	mov bx, 0000h
-	mov es, bx
-	mov bx, 7C00h
-	call clear_mbr
-	mov ax, 0000h
-	mov bx, 7C00h
-	mov ss, ax
-	mov sp, bx
-	xor ax, ax
+	;
+	; This is the kernel for the NOS operating system.
+	;
+	; Upon entry, this kernel assumes the following:
+	; 0000:7C00-0000:7E00	  '	  '   Bootloader
+	; 1000:0000		  '	  '   Kernel beginning location
+	; DS=0000, CS=1000 (this MUST be true), ES=0000, SS=9C00 (SP=4096d)
+	;
+	; The kernel memory model looks something like this:
+	;
+	; 0000:7E00-0000:7C00	  '	  '   Stack
+	; 2000:0000	   '	  '	  '   FSB (filesystem block) NOTE: THIS IS ASSUMED LOADED BY THE BOOTLOADER ON STARTUP!
+	; 2000:0000	   '	  '	  '   FSB (filesystem block)
+	; 3000:0000	   '	  '	  '   TSR driver space
+	; 4000:0000	   '	  '	  '   User program code segment
+	; 5000:0000	   '	  '	  '   Data for user programs  -|
+	; 6000:0000	   '	  '	  '   Extra for user programs  |--- With the exception of stack, these are not used in flat mode.
+	; 7000:0000	   '	  '	  '   Stack for user programs -|
+	; 8000:0000	   '	  '	  '   Kernel API space
+	; 9000:0000	   '	  '	  '   Command line space
+	;
+	; And as such we now begin our code...
+	; We want to create a sort of data area first, so here we jump over that.
+	jmp start
+	; We now begin our data area.
+	old_ss dw 0000h    ; For saving our old SS locations.
+	old_sp dw 0000h    ; Same for old SP.
+
+start:
+	; The moment of truth.
+	; First we want to set up our segments to what we need. Since the kernel exists as
+<<<<<<< HEAD
+	; a flat program, set ES and DS to CS.
+	; This is a bad practice, but our bootloader should keep the stack within a sane RAM location,
+	; as assumed.
+	push cs
+	push cs
+	pop ds
+	pop es
+	; Now we clear out our bootloader, and set it to the stack.
+	mov cx, 0200h	   ; The size of one sector
+	mov bx, 7C00h	   ; The beginning location of our bootloader
+mbr_clear:
+	mov ah, [0000h:bx]
+	xor ah, ah
+	mov [0000h:bx], ah
+	loop mbr_clear
+	; We should now have the MBR area clean, set the stack up.
+	mov ss, 0000h
+	mov sp, 7E00h
+	; Now that we have the stack, do a push-pop test
+	mov ax, 55AAh
+	push ax
+	pop bx
+	cmp ax, bx
+	; If they don't equal, something is wrong
+	jne system_error_preapi
+	; Now we need to get the API into RAM. This will be stored in a file called INT21,
+	; and will be non-executable.
+get_api:
+	; This will involve changing interrupt vectors. ALWAYS DISABLE INTERRUPTS BEFORE CHANGING
+	; ANY VECTORS!
+	cli
+	; Get the file block, using ES to do so
+	mov ax, 2000h
+	mov es, ax
 	xor bx, bx
-	;; Begin init of kernel (display prompt, prep mem, etc.)
-	;; Begin by setting ES to 0000, and it will be used for program segments
-	mov es, bx
-	;; Display the prompt in a loop, for now not interpreting the commands
-	;; using RAM locations 1000:1000-1000:10FF for command line entered
-	mov bx, 1000h
-	push cx
-	mov cx, 1000h
-	mov ds, cx
-	pop cx
-beep_init:
-	;; Show that the kernel has been loaded by beeping the PC speaker
-	mov cx, 1000d
-	call startsound
-	mov ah, 86h
-	mov cx, 000Fh
-	mov dx, 4240h
-	int 15h
-	call stopsound
-prompt_loop:
-	mov ah, 0Eh
-	mov al, 0Dh
-	int 10h
-	mov al, '>'
-	int 10h
-	mov al, 20h
-	int 10h
-	mov ah, 00h
-	int 16h
-	cmp al, 08h
-	je  print_backspace
-	cmp al, 0Dh
-	jne prompt_2
-	call print_enter
-	jmp interpret_cmd
-prompt_2:	
-	mov ah, 0Eh
-	int 10h 		;Char is already in AL
-	mov [ds:si], al
-	mov ah, 03h
-	int 10h
-	mov ah, 02h
-	inc dh
-	int 10h
-	cmp si, 10FFh
-	jne prompt_3
-	call interpret_cmd
-prompt_3:
-	inc si
-	jmp prompt_loop
-clear_mbr:
-	cmp bx, 7E00h
-	jne clr_loop
-	ret
-clr_loop:
-	mov dl, 00h
-	mov [es:bx], dl
-	inc bx
-	jmp clear_mbr
-interpret_cmd:
-	mov ah, 0Eh
-	mov al, 0Dh
-	int 10h
-	mov ah, 03h
-	int 10h
-	mov ah, 02h
-	inc dl
-	mov dh, 00h
-	int 10h
-	;; interpretation code goes here
-	mov bx, 1000h
-clear_loop:	
-	;; reset the pointer and clear everything up to 1000:10FF
-	cmp bx, 1100h
-	jne clear_cmd
-	jmp prompt_loop
-clear_cmd:
-	mov bx, 1000h
-c1:	
-	mov dl, 00h
-	mov [ds:bx], dl
-	inc bx
-	cmp bx, 10FFh
-	jne clear_loop
-	jmp prompt_loop
-print_backspace:
-	mov ah, 03h
-	int 10h
-	mov ah, 02h
-	dec dl
-	int 10h
-	mov ah, 09h
-	mov al, 20h
-	int 10h
-	jmp prompt_loop
-startsound:			;Not my own software bit, got this function
-				;edaboard.com
-	;; CX=Frequency in Hertz. Destroys AX and DX.
-	cmp cx, 014h
-	jb  startsound_done	;Call stopsound
-	in  al, 61h
-	or  al, 003h
-	dec ax
-	out 061h, al		;Turn and gate on; turn timer off
-	mov dx, 00012h		;High word of 1193180
-	mov ax, 034DCh		;Low word of 1193180
-	div cx
-	mov dx, ax
-	mov al, 0B6h
-	pushf
-	cli			;!!!
-	out 043h, al
-	mov al, dl
-	out 042h, al
-	mov al, dh
-	out 042h, al
-	popf
-	in  al, 061h
-	or  al, 003h
-	out 61h, al
-startsound_done:
-	ret
-stopsound:			;Destroys AL. Again, not my own code in this routine. From edaboard.com.
-	in  al, 061h
-	and al, 0FCh
-	out 061h, al
-	ret
-print_enter:
-	mov ah, 03h
-	int 10h
-	mov ah, 02h
-	inc dh
-	mov dl, 00h
-	int 10h
-	ret
-;; Set to two blocks
-times 1024-($-$$) db 0
+	mov cx, 0008d
+	; The program, as stated, assumes the FSB is set on startup.
+	; INT21 is always the first file entry on the disk. If it isn't, then
+	; we will have to abort the boot.
+	; Get the first bytes of the file field.
+	mov ah, [2000h:cx]
+	cmp ah, 80h
+	jne api_load_error
+	inc cx	; To location of CHS
+	; Get each value and push them.
+	xor al, al
+	mov ah, [2000h:cx]
+	push ax
+	inc cx
+	mov ah, [2000h:cx]
+	push ax
+	inc cx
+	mov ah, [2000h:cx]
+	push ax
+	inc cx
+	; Get the "number of sectors" byte
+	mov ah, [2000h:cx]
+	push ax
+	inc cx
+	; Now we need to make sure file name is valid.
+	; Get each byte and compare it.
+=======
+	; a flat program, set ES and SS to CS.
+	; This is a bad practice, but our bootloader should keep the stack within a sane RAM location,
+	; as assumed.
+>>>>>>> 341ff36f675baa9aef8fde8a58fcee1afae37ef9
