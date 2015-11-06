@@ -40,10 +40,12 @@ start:
 	; Now we clear out our bootloader, and set it to the stack.
 	mov cx, 0200h	   ; The size of one sector
 	mov bx, 7C00h	   ; The beginning location of our bootloader
+	mov dx, 0000h	   ; FASM says we have to do it this way...
+	mov es, dx
 mbr_clear:
-	mov ah, [0000h:bx]
+	mov ah, [es:bx]
 	xor ah, ah
-	mov [0000h:bx], ah
+	mov [es:bx], ah
 	loop mbr_clear
 	; We should now have the MBR area clean, set the stack up.
 	mov ss, 0000h
@@ -55,15 +57,16 @@ mbr_clear:
 	cmp ax, bx
 	; If they don't equal, something is wrong
 	jne system_error_preapi
+	; Clear out ES
+	xor dx, dx
+	mov es, dx
 	; Now we need to get the API into RAM. This will be stored in a file called INT21,
 	; and will be non-executable.
 get_api:
 	; This will involve changing interrupt vectors. ALWAYS DISABLE INTERRUPTS BEFORE CHANGING
 	; ANY VECTORS!
 	cli
-	; Get the file block, using ES to do so
-	mov ax, 2000h
-	mov es, ax
+	; Get the file, by loading the FSB entry
 	xor bx, bx
 	mov cx, 0008d
 	; The program, as stated, assumes the FSB is set on startup.
@@ -91,3 +94,75 @@ get_api:
 	inc cx
 	; Now we need to make sure file name is valid.
 	; Get each byte and compare it.
+	; First we need to get the INT21 bytes...
+	mov cx, 0005d
+	c1 mov ah, [2000h:cx]
+	push ax
+	loop c1
+	; Now we need to compare each one.
+	pop ax
+	cmp ah, "I"
+	jne api_load_error
+	pop ax
+	cmp ah, "N"
+	jne api_load_error
+	pop ax
+	cmp ah, "T"
+	jne api_load_error
+	pop ax
+	cmp ah, "2"
+	jne api_load_error
+	pop ax
+	cmp ah, "1"
+	jne api_load_error
+	; Our file is valid. Stack is now as follows:
+	; [top]
+	; Number of sectors
+	; Sector value
+	; Head value
+	; Cylinder value
+	; [unknown values until bottom]
+	; So here we set up values to load from disk.
+	; Since we can only pop words off the stack, we need to use
+	; DX as a gen purpose register here.
+	xor dx, dx
+	pop dx		; Number of sectors
+	mov al, dh
+	pop dx
+	mov cl, dh	; Sector
+	pop dx		; Head, which goes in DH. We will need to back this up in SI.
+	mov si, dx
+	pop dx
+	mov ch, dh	; Sector
+	mov dx, si
+	xor si, si
+	mov dl, 00h	; Floppy 0 is assumed, like in the bootloader
+	mov ah, 02h	; Read sectors
+	; And now, a brief word from INT 13h...
+	sti
+	mov bx, 8000h
+	mov es, bx
+	mov bx, 0000h
+	int 13h
+	jc  api_load_error
+	cli
+	; Our Kernel API is now loaded, so we need to set our IVT values.
+	xor ax, ax
+	xor bx, bx
+	xor cx, cx
+	xor dx, dx
+	mov es, bx
+	mov ax, 8000h
+	mov bx, 0000h	; Just to make sure
+	mov [0000:21h*4+2], bx
+	mov [0000:21h*4], ax
+	sti
+	; Kernel API is now active!
+	; We need to be sure that INT 21 works. Function 00 is an install
+	; check, and so we will call it with that value.
+	mov ah, 00h
+	int 21h
+	; If AX=5555h, we are done here.
+	cmp ax, 5555h
+	jne api_load_error
+	; On to our next task!
