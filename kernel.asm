@@ -30,7 +30,6 @@
 start:
 	; The moment of truth.
 	; First we want to set up our segments to what we need. Since the kernel exists as
-<<<<<<< HEAD
 	; a flat program, set ES and DS to CS.
 	; This is a bad practice, but our bootloader should keep the stack within a sane RAM location,
 	; as assumed.
@@ -92,8 +91,3 @@ get_api:
 	inc cx
 	; Now we need to make sure file name is valid.
 	; Get each byte and compare it.
-=======
-	; a flat program, set ES and SS to CS.
-	; This is a bad practice, but our bootloader should keep the stack within a sane RAM location,
-	; as assumed.
->>>>>>> 341ff36f675baa9aef8fde8a58fcee1afae37ef9
