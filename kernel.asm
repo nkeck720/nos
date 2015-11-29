@@ -11,7 +11,6 @@
 	;
 	; 0000:7E00-0000:7C00	  '	  '   Stack
 	; 2000:0000	   '	  '	  '   FSB (filesystem block) NOTE: THIS IS ASSUMED LOADED BY THE BOOTLOADER ON STARTUP!
-	; 2000:0000	   '	  '	  '   FSB (filesystem block)
 	; 3000:0000	   '	  '	  '   TSR driver space
 	; 4000:0000	   '	  '	  '   User program code segment
 	; 5000:0000	   '	  '	  '   Data for user programs  -|
@@ -26,7 +25,8 @@
 	; We now begin our data area.
 	old_ss dw 0000h    ; For saving our old SS locations.
 	old_sp dw 0000h    ; Same for old SP.
-
+	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
+	bootmsg	db "Booting up...", 0Dh, 00h				    ; Boot message
 start:
 	; The moment of truth.
 	; First we want to set up our segments to what we need. Since the kernel exists as
@@ -165,4 +165,20 @@ get_api:
 	; If AX=5555h, we are done here.
 	cmp ax, 5555h
 	jne api_load_error
-	; On to our next task!
+	;; Now here, we want to display a version string and a loading message.
+	;; Print string is function 0x01.
+	push ds
+	push cs
+	pop ds
+	mov ah, 01h
+	mov dx, version
+	int 21h
+	mov ah, 01h		; Never assume that the register will stay the same.
+	mov dx, bootmsg
+	int 21h
+	;; Number of chars written is put in BH, but we don't care about that.
+	xor bh, bh
+	;; We need our driver list loaded. It will be stored in a file named
+	;; DRVS.
+	;; File load function is 0x02. File write is 0x03.
+	
