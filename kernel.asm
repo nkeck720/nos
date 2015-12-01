@@ -43,13 +43,13 @@ start:
 	mov dx, 0000h	   ; FASM says we have to do it this way...
 	mov es, dx
 mbr_clear:
-	mov ah, [es:bx]
 	xor ah, ah
-	mov [es:bx], ah
+	mov es:bx, ah
 	loop mbr_clear
 	; We should now have the MBR area clean, set the stack up.
-	mov ss, 0000h
-	mov sp, 7E00h
+	mov ax, 0000h		; Later in the kernel, we will do checks to see if the SP reaches 7C00 and if 
+	mov ss, ax		; it does we will reset the pointer to 7E00 to ensure the 512-byte limit.
+	mov sp, 7E00h		; This is in response to http://board.flatassembler.net/topic.php?p=184920#184920
 	; Now that we have the stack, do a push-pop test
 	mov ax, 55AAh
 	push ax
@@ -68,36 +68,39 @@ get_api:
 	cli
 	; Get the file, by loading the FSB entry
 	xor bx, bx
-	mov cx, 0008d
+	mov si, 0008d		;Changed as suggested by SeproMan
 	; The program, as stated, assumes the FSB is set on startup.
 	; INT21 is always the first file entry on the disk. If it isn't, then
 	; we will have to abort the boot.
 	; Get the first bytes of the file field.
-	mov ah, [2000h:cx]
+	mov ah, [2000h:si]
 	cmp ah, 80h
 	jne api_load_error
-	inc cx	; To location of CHS
+	inc si	; To location of CHS
 	; Get each value and push them.
 	xor al, al
-	mov ah, [2000h:cx]
+	mov ah, [2000h:si]
 	push ax
-	inc cx
-	mov ah, [2000h:cx]
+	inc si
+	mov ah, [2000h:si]
 	push ax
-	inc cx
-	mov ah, [2000h:cx]
+	inc si
+	mov ah, [2000h:si]
 	push ax
-	inc cx
+	inc si
 	; Get the "number of sectors" byte
-	mov ah, [2000h:cx]
+	mov ah, [2000h:si]
 	push ax
-	inc cx
+	inc si
 	; Now we need to make sure file name is valid.
 	; Get each byte and compare it.
 	; First we need to get the INT21 bytes...
 	mov cx, 0005d
-	c1 mov ah, [2000h:cx]
+	mov si, cx
+c1:	
+	mov ah, [2000h:si]
 	push ax
+	dec si
 	loop c1
 	; Now we need to compare each one.
 	pop ax
@@ -154,8 +157,8 @@ get_api:
 	mov es, bx
 	mov ax, 8000h
 	mov bx, 0000h	; Just to make sure
-	mov [0000:21h*4+2], bx
-	mov [0000:21h*4], ax
+	mov 0000:21h*4+2, bx
+	mov 0000:21h*4, ax
 	sti
 	; Kernel API is now active!
 	; We need to be sure that INT 21 works. Function 00 is an install
