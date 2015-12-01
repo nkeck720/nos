@@ -167,9 +167,6 @@ get_api:
 	jne api_load_error
 	;; Now here, we want to display a version string and a loading message.
 	;; Print string is function 0x01.
-	push ds
-	push cs
-	pop ds
 	mov ah, 01h
 	mov dx, version
 	int 21h
@@ -181,4 +178,116 @@ get_api:
 	;; We need our driver list loaded. It will be stored in a file named
 	;; DRVS.
 	;; File load function is 0x02. File write is 0x03.
+	mov ah, 02h
+	xor al, al		;Just in case
+	mov dx, drv_fname	;Name of file (DS should be set to the same as CS)
+	mov bx, 6000h		;Yes, this is the same as program ES. ES will later be cleared.
+	mov es, bx
+	mov bx, 0000h
+	int 21h
+	;; First check for an error, and if so handle it appropriately
+	jc  disk_error
+	;; Now we need to parse the data. Formatting is as shown:
+	;; 0xAA00FF55 #<filename1>* #<filename2>* ... 0x0D
+	;; This is all in one big string, the CR is the EOF mark (spaces not in file).
+	;; When sacnning for filenames, anything not enclosed in #* is ignored.
+	;; In other files, an EOF is marked by 0xFF.
+	;; So get DS to be our file, saving the old DS
+	push ds
+	push es
+	pop ds
+	;; Stack
+	;; <top>
+	;; | Original DS
+	;; <end>
+	mov ax, word ptr [0000h]	;Get the first word
+	mov bx, word ptr [0002h]	;And the second one
+	cmp ax, 00AAh
+	;; If we have a bad file, we want to skip over it like it doesn't exist to
+	;; avoid errors.
+	jne drv_file_done
+	cmp bx, 55FFh
+	jne drv_file_done
+	;; Now we will get the individual filenames.
+	mov cx, 0004h		;start the pointer at the byte after the header.
+	xor bh, bh		;for filename processing
+get_dem_filenames:
+	;; Scan until we get a hash
+	mov ah, byte ptr [ds:cx]
+	cmp ah, "#"
+	je  we_got_one
+	;; So this one isn't a hash. See if it is our EOF.
+	cmp ah, 0Dh
+	je  drv_file_done
+	;; It isn't either one, so we increment the pointer and try again.
+	inc cx
+	jmp get_dem_filenames
+we_got_one:
+	;; We found a hash, we need to get each char until we get a closing asterisk.
+	inc cx
+	mov ah, byte ptr [ds:cx]
+	cmp ah, "*"
+	je  store_filename
+	;; We don't have our closing mark yet, so store the char
+	push ax			;When we pop these off, we will ONLY be using the byte in AH
+	inc bh
+	jmp we_got_one
+store_filename:
+	;; So we have a mess on the stack:
+	;; <top>
+	;; | Filename (number of PUSHes done in BH)
+	;; | Original DS
+	;; <end>
+	;; We want to store this in DS starting at FFF0 (DRVS can't possibly be almost 64k long...)
+	;; Start by popping crud off of the stack.
+	mov cx, bh
+pop_off_loop:	
+	pop ax
+	mov [ds:0FFF0h+bh], ah
+	loop pop_off_loop
+	;; We should have this now:
+	;; <top>
+	;; | Original DS
+	;; <end>
+	;; Now we need to place the 0x00 string terminator on the string.
+	inc bh
+	mov [ds:0FFF0h+bh], 00h
+	;; And here we need to load the driver. This will load it into TSR space. Curently, only one driver
+	;; may stay resident at a time until I work in some RAM tracking code.
+	push es			;So we can recover later
+	push cx
+	mov ah, 02h
+	mov dx, 0FFF0h
+	mov bx, 3000
+	mov es, bx
+	mov bx, 0000h
+	int 21h
+	;; Check for an error
+	jc  disk_error
+	;; Now check the driver, making sure that the noted architecture is flat (F)
+	mov al, byte ptr [es:bx]
+	cmp al, "F"
+	;; If this isn't flat we will take the "scream and run" approach:
+	;; - Notify the user that a driver is invalid
+	;; - Stop any further driver loading
+	;; - Clear out the TSR space
+	;; - Continue with OS loading
+	;; - Do not use any external commands.
+	;; We will start this "safe mode" state by setting the first byte in the TSR space to 0x12.
+	jne run_for_your_life
+	;; The driver is OK. Here we will run the code, by calling it. To exit, a program/driver
+	;; must "RET".
+	call 3000h:0001h
+	;; Check the return code to match a driver. Again, if this is not true then we need to run
+	;; for our lives.
+	cmp ch, 00h
+	jne run_for_your_life
+	;; Check for a successful return code
+	cmp cl, 00h
+	;; If no success, then we could have an issue, so we need to run for it just in case.
+	jne run_for_your_life
+	;; If we get here, we are successfully loaded.
+	pop cx
+	pop es
+	jmp get_dem_filenames
 	
