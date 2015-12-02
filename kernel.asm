@@ -26,7 +26,9 @@
 	old_ss dw 0000h    ; For saving our old SS locations.
 	old_sp dw 0000h    ; Same for old SP.
 	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
-	bootmsg	db "Booting up...", 0Dh, 00h				    ; Boot message
+	bootmsg	db "Booting up...", 0Dh, 00h	; Boot message
+	blank_line db 0Dh, 00h			; A blank line on the screen
+	prompt db "NOS>", 00h			; Command prompt
 start:
 	; The moment of truth.
 	; First we want to set up our segments to what we need. Since the kernel exists as
@@ -293,4 +295,34 @@ pop_off_loop:
 	pop cx
 	pop es
 	jmp get_dem_filenames
+drv_file_done:
+	;; When we get here we are done with our driver file. We need to unload DRVS (from RAM, no writing
+	;; to disk is necessary since we didn't modify anything in the file.
+	;; Stack:
+	;; <top>
+	;; | Original DS
+	;; <end>
+	mov cx, 0FFFFh
+	xor bx, bx
+unload_drv_list:
+	mov si, cx		; For writing to RAM (thanks Sepro!)
+	mov ds:si, bh
+	loop unload_drv_list	; Keep going until CX gets to 0
+	;; Driver list unloaded, we can return to home sweet Original DS.
+	pop ds
+	;; Now we can load up a basic CLI (Command line interface, not thr cli instruction :D)
+	;; Start by skipping a line just for visual effects
+	mov ah, 01h		; Print function
+	mov dx, blank_line
+	int 21h
+	;; We shall now display the prompt and a space, and invoke the get string function (0x06)
+	mov ah, 01h
+	mov dx, prompt
+	int 21h
+	mov ah, 06h
+	push ds			; Save original DS again
+	mov ax, 9000h
+	mov ds, ax		; The command line space as shown in the memory model
+	mov dx, 0000h
+	int 21h
 	
