@@ -27,6 +27,7 @@
 	old_sp dw 0000h    ; Same for old SP.
 	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
 	bootmsg	db "Booting up...", 0Dh, 00h	; Boot message
+	drv_fname db "DRVS", 00h		; Driver list file name
 	blank_line db 0Dh, 00h			; A blank line on the screen
 	prompt db "NOS>", 00h			; Command prompt
 start:
