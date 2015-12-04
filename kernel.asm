@@ -326,4 +326,6 @@ unload_drv_list:
 	mov ds, ax		; The command line space as shown in the memory model
 	mov dx, 0000h
 	int 21h
+	;; Now, we switch back to the original DS and parse the command.
+	;; For now, the only builtin we have is CLS.
 	
