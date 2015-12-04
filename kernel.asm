@@ -29,7 +29,7 @@
 	bootmsg	db "Booting up...", 0Dh, 00h	; Boot message
 	drv_fname db "DRVS", 00h		; Driver list file name
 	blank_line db 0Dh, 00h			; A blank line on the screen
-	prompt db "NOS>", 00h			; Command prompt
+	prompt db "NOS> ", 00h			; Command prompt
 start:
 	; The moment of truth.
 	; First we want to set up our segments to what we need. Since the kernel exists as
