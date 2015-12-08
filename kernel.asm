@@ -316,7 +316,9 @@ unload_drv_list:
 	mov ah, 01h		; Print function
 	mov dx, blank_line
 	int 21h
+command_prompt:	
 	;; We shall now display the prompt and a space, and invoke the get string function (0x06)
+	;; Note that 0x06 places a null at the end of the line gotten automatically
 	mov ah, 01h
 	mov dx, prompt
 	int 21h
@@ -328,4 +330,73 @@ unload_drv_list:
 	int 21h
 	;; Now, we switch back to the original DS and parse the command.
 	;; For now, the only builtin we have is CLS.
-	
+	pop ds
+	push es			; Save ES
+	mov bx, 9000h
+	mov es, bx
+	mov bx, 0000h
+	;; String compare function is under development, so for now we want to use
+	;; the individual comparison.
+	mov ah, byte ptr [es:bx]
+	cmp ah, "C"		; Command line is always in caps
+	jne external_command
+	inc bx
+	mov ah, byte ptr [es:bx]
+	cmp ah, "L"
+	jne external_command
+	inc bx
+	mov ah, byte ptr [es:bx]
+	cmp ah, "S"
+	jne external_command
+	inc bx			; We still have to check for the end of the line
+	mov ah, byte ptr [es:bx]
+	cmp ah, 00h
+	jne external_command
+	;; We have a CLS command.
+	pop es
+	xor bx, bx
+	;; CLS gets the current video mode and then sets it, clearing the screen.
+	mov ah, 0Fh
+	int 10h
+	mov ah, 00h
+	int 10h
+	;; Now go back to the command prompt.
+	jmp command_prompt
+external_command:
+	;; We have a disk-based program to load, so here we want to load that
+	;; and set up the memory model of the said file.
+	;; First we want to make sure the FSB is up to date.
+	mov ah, 02h
+	mov al, 01d
+	mov mov ch, 00h
+	mov cl, 01d
+	mov dh, 00h
+	mov dl, 00h		;Again, we are assuming that the floppy drive A: is the boot drive.
+	mov bx, 4000h		;The program segment, which will be used later to run the thing
+	mov es, bx
+	mov bx, 0000h
+	int 13h
+	;; If there is a disk error, we want to call up the handler
+	jc  disk_io_error
+	;; Load up the file specified, and signal for the check of executable file
+	;; by setting carry on call
+	push ds		  ; Save this again
+	mov ah, 02h
+	mov dx, 9000h
+	mov ds, dx
+	mov dx, 0000h
+	;; ES:BX should be already set
+	stc
+	int 21h
+	;; Check to make sure the file was loaded. If not, we don't have an executable file
+	;; or the file was not found.
+	jc  bad_prog_file
+	;; Now check for a flat or segmented program
+	pop ds			; We get this back now
+	mov ah, byte ptr [es:bx]
+	cmp ah, "F"
+	je  run_flat_prog
+	cmp ah, "S"
+	je run_segmented_prog
+	;; Anything else and we have an invalid program.
+	jmp bad_prog_hdr
