@@ -400,3 +400,56 @@ external_command:
 	je run_segmented_prog
 	;; Anything else and we have an invalid program.
 	jmp bad_prog_hdr
+bad_prog_file:
+	;; If we get here the user has either entered a bad command, or there was a disk error.
+	;; In any case we need to notify the user and return to a prompt.
+	mov ah, 01h
+	mov dx, bad_command
+	int 21h
+	jmp command_prompt
+run_flat_prog:
+	;; Here we wanna look at the flat structured file for a bit:
+	;;
+	;; A flat program file is structured like so:
+	;;
+	;; [begin file]
+	;; "F" (0x46) indicates flat program
+	;; [up to 64k-1 byte of code and data]
+	;; "EF" (byte order 0x4546)
+	;; 0xFF signature
+	;;
+	;; This structure needs to be tested. If we never find the "EF" or the 0xFF, then we
+	;; have a bad program. We also need to make sure that the code fits one segment.
+
+	;; First test for the EF thingy.
+	mov bx, 0001h		; 64k-1 byte
+test_flat_seg:
+	mov ah, byte ptr [es:bx]
+	cmp ah, "E"
+	jne not_done_yet_flat
+	inc bx
+	mov ah, byte ptr [es:bx]
+	cmp ah, "F"
+	jne not_done_yet_flat
+	inc bx
+	mov ah, byte ptr [es:bx]
+	cmp ah, 0FFh
+	jne not_done_yet_flat	; Just in case "EF" appears in the program/data.
+	;; If we get here, we have a program footer
+	;; so we want to start working on getting the code into the segment alone and
+	;; calling it
+	jmp remove_footer_flat
+not_done_yet_flat:
+	;; We aren't done, so we increment the pointer and try again
+	;; UNLESS: if bx=0xFFFF here, or 0x0000 (from the inc "starting over"), we have a bad
+	;; program because of a missing footer.
+	cmp bx, 0FFFFh
+	je  no_flat_footer
+	cmp bx, 0000h
+	je  no_flat_footer
+	inc bx
+	jmp test_flat_seg
+	
+	
+	
+	
