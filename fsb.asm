@@ -18,7 +18,7 @@
 	db 02h			; INT21 will be 1024 bytes
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
-	db 0FFh			; End field
+	db 0FFh 		; End field
 	times 511-($-$$) db 00h
 	db 0FFh
 	
