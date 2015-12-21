@@ -24,6 +24,7 @@
 
 	;; First we want to check if the kernel panic thing is being called.
 	pushf
+	pushf			; For later functions
 	cmp ax, 0123h
 	jne main_func_check
 	cmp bx, 4567h
@@ -50,4 +51,70 @@ main_func_check:
 	je  install_check	; Our install check routine for boot time
 	cmp ah, 01h
 	je  print_string	; Our print string function
+	cmp ah, 02h
+	je  open_file		; Open file function
+	cmp ah, 03h
+	je  close_file		; Close file function
+	cmp ah, 04h
+	je  nos_version		; Returns tho NOS version
+	;; Skip 0x05 for now, created 0x06 with no 0x05! so I will have to think up a
+	;; function to fill this hole.
+	cmp ah, 06h
+	je  get_user_string	; Our getstring function
+	;; If none of these match, pop our flags, set carry, and return
+	popf
+	stc
+	iret
+install_check:
+	;; This is a simple install check function.
+	;; Doesn't take any args, and just returns AX=0x5555
+	popf			; Required of all functions, to keep stack clean
+	mov ax, 5555h
+	iret
+print_string:
+	;; Our own little PRINT function.
+	;; Takes one arg in DX, which is the offset from DS that the string exists at.
+	;; The string is a, well, string of bytes, each printed until the function sees a NULL,
+	;; which is when he funcion quits.
+	popf
+	;; First save our registers.
+	push ax
+	push bx
+	push cx
+	push dx
+	;; Now we need to start a loop where we print chars until we get to NULL.
+	mov ah, 0Eh
+	xor bx, bx
+	mov cx, 0001h
+print_loop:
+	;; get the char in DS:DX and increment the loop.
+	mov al, byte ptr [ds:dx]
+	inc dx
+	;; Check for a null or a newline (carriage return)
+	cmp al, 00h
+	je  print_done
+	cmp al, 0Dh
+	je  print_newline
+	;; Otherwise, print the character
+	int 10h
+	jmp print_loop
+print_done:
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	;; We are done here.
+	iret
+print_newline:
+	;; We need to service a 0x0D (carriage return).
+	pusha			; Save EVERYTHING
+	mov ah, 03h
+	int 10h			; get the current cursor pos
+	mov ah, 02h
+	mov dh, 00h
+	inc dl			; Change the row and column values
+	int 10h
+	popa
+	jmp print_loop
+	
 	

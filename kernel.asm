@@ -185,9 +185,9 @@ c1:
 	;; DRVS.
 	;; File load function is 0x02. File write is 0x03.
 	mov ah, 02h
-	xor al, al		;Just in case
-	mov dx, drv_fname	;Name of file (DS should be set to the same as CS)
-	mov bx, 6000h		;Yes, this is the same as program ES. ES will later be cleared.
+	xor al, al		; Just in case
+	mov dx, drv_fname	; Name of file (DS should be set to the same as CS)
+	mov bx, 6000h		; Yes, this is the same as program ES. ES will later be cleared.
 	mov es, bx
 	mov bx, 0000h
 	int 21h
@@ -196,7 +196,7 @@ c1:
 	;; Now we need to parse the data. Formatting is as shown:
 	;; 0xAA00FF55 #<filename1>* #<filename2>* ... 0x0D
 	;; This is all in one big string, the CR is the EOF mark (spaces not in file).
-	;; When sacnning for filenames, anything not enclosed in #* is ignored.
+	;; When scanning for filenames, anything not enclosed in #* is ignored.
 	;; In other files, an EOF is marked by 0xFF.
 	;; So get DS to be our file, saving the old DS
 	push ds
