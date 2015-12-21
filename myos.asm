@@ -1,4 +1,9 @@
 use16
+;
+; This is the bootsector for NOS.
+; this code should not have to chnge unless the FSB layout changes or it happens that
+; this code needs to be optimized.
+;
 org 7C00h	
 mov ax, 9ch
 mov ss, ax
