@@ -18,7 +18,7 @@ mov dx, 0000h
 int 10h
 ;----------------------------------------	
 loadup:
-
+	push dl 	; Save boot drive
 	mov ah, 00h
 	mov dl, 00h
 	int 13h
@@ -35,7 +35,7 @@ kernel_load:
 	mov ch, 00h
 	mov dh, 00h
 	mov cl, 02h
-	mov dl, 00h
+	; DL should be the boot drive
 	mov bx, 2000h
 	mov es, bx
 	mov bx, 0000h

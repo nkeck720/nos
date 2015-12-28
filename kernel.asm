@@ -26,11 +26,15 @@
 	old_ss dw 0000h    ; For saving our old SS locations.
 	old_sp dw 0000h    ; Same for old SP.
 	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
-	bootmsg	db "Booting up...", 0Dh, 00h	; Boot message
+	bootmsg db "Booting up...", 0Dh, 00h	; Boot message
 	drv_fname db "DRVS", 00h		; Driver list file name
 	blank_line db 0Dh, 00h			; A blank line on the screen
 	prompt db "NOS> ", 00h			; Command prompt
 start:
+	pop dl			; Get our boot drive
+	mov boot_drv, dl	; Save it
+	; save the boot drive where our INT21 functions will know about it
+	mov [8000h:0FFFFh], dl
 	; The moment of truth.
 	; First we want to set up our segments to what we need. Since the kernel exists as
 	; a flat program, set ES and DS to CS.
@@ -142,7 +146,7 @@ c1:
 	mov ch, dh	; Sector
 	mov dx, si
 	xor si, si
-	mov dl, 00h	; Floppy 0 is assumed, like in the bootloader
+	mov dl, [boot_drv]  ; Our boot drive
 	mov ah, 02h	; Read sectors
 	; And now, a brief word from INT 13h...
 	sti
@@ -235,7 +239,7 @@ we_got_one:
 	cmp ah, "*"
 	je  store_filename
 	;; We don't have our closing mark yet, so store the char
-	push ax			;When we pop these off, we will ONLY be using the byte in AH
+	push ax 		;When we pop these off, we will ONLY be using the byte in AH
 	inc bh
 	jmp we_got_one
 store_filename:
@@ -260,7 +264,7 @@ pop_off_loop:
 	mov [ds:0FFF0h+bh], 00h
 	;; And here we need to load the driver. This will load it into TSR space. Curently, only one driver
 	;; may stay resident at a time until I work in some RAM tracking code.
-	push es			;So we can recover later
+	push es 		;So we can recover later
 	push cx
 	mov ah, 02h
 	mov dx, 0FFF0h
@@ -316,14 +320,14 @@ unload_drv_list:
 	mov ah, 01h		; Print function
 	mov dx, blank_line
 	int 21h
-command_prompt:	
+command_prompt: 
 	;; We shall now display the prompt and a space, and invoke the get string function (0x06)
 	;; Note that 0x06 places a null at the end of the line gotten automatically
 	mov ah, 01h
 	mov dx, prompt
 	int 21h
 	mov ah, 06h
-	push ds			; Save original DS again
+	push ds 		; Save original DS again
 	mov ax, 9000h
 	mov ds, ax		; The command line space as shown in the memory model
 	mov dx, 0000h
@@ -331,7 +335,7 @@ command_prompt:
 	;; Now, we switch back to the original DS and parse the command.
 	;; For now, the only builtin we have is CLS.
 	pop ds
-	push es			; Save ES
+	push es 		; Save ES
 	mov bx, 9000h
 	mov es, bx
 	mov bx, 0000h
@@ -380,7 +384,7 @@ external_command:
 	jc  disk_io_error
 	;; Load up the file specified, and signal for the check of executable file
 	;; by setting carry on call
-	push ds		  ; Save this again
+	push ds 	  ; Save this again
 	mov ah, 02h
 	mov dx, 9000h
 	mov ds, dx
