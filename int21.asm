@@ -9,18 +9,18 @@
 	;;
 	;; AH=00h: Does nothing, returns AX=5555h
 	;; AH=01h: Write string to display (null terminated) from DS:DX, returns number of chars written
-	;; 	   in  BH.
+	;;	   in  BH.
 	;; AH=02h: Open a file. Opens file whose null-terminated name is in DS:DX, and loads the contents
-	;; 	   of the file to ES:BX. Returns number of blocks read in AL, CF is set on an error, and
-	;; 	   BH describes the error when CF is set.
+	;;	   of the file to ES:BX. Returns number of blocks read in AL, CF is set on an error, and
+	;;	   BH describes the error when CF is set.
 	;; AH=03h: Close a file. DS:DX points to the null-terminated file name, ES:BX points to the file
-	;; 	   contents, and AH contains the number of blocks to be written. Returns nothing on no error,
-	;; 	   if an error occurs then CF is set and BH describes the error.
+	;;	   contents, and AH contains the number of blocks to be written. Returns nothing on no error,
+	;;	   if an error occurs then CF is set and BH describes the error.
 	;; AH=04h: Gets the NOS version and places two ASCII characters into CX. (e.g. CX="20", NOS 2.0)
-	;; 	   Minor version number is placed in AL (e.g. Rev 3, AL="3")
+	;;	   Minor version number is placed in AL (e.g. Rev 3, AL="3")
 	;; AH=05h: No function is here yet, this will just IRET until something gets placed here.
 	;; AH=06h: Gets a string from the user until the user presses return. The string is placed into
-	;; 	   RAM pointed to by DS:DX.
+	;;	   RAM pointed to by DS:DX.
 
 	;; First we want to check if the kernel panic thing is being called.
 	pushf
@@ -56,7 +56,7 @@ main_func_check:
 	cmp ah, 03h
 	je  close_file		; Close file function
 	cmp ah, 04h
-	je  nos_version		; Returns tho NOS version
+	je  nos_version 	; Returns tho NOS version
 	;; Skip 0x05 for now, created 0x06 with no 0x05! so I will have to think up a
 	;; function to fill this hole.
 	cmp ah, 06h
@@ -79,12 +79,12 @@ print_string:
 	popf
 	;; First save our registers.
 	push ax
-	push bx
+	; BH will be the number of chars that we write
 	push cx
 	push dx
 	;; Now we need to start a loop where we print chars until we get to NULL.
 	mov ah, 0Eh
-	xor bx, bx
+	xor bh, bh
 	mov cx, 0001h
 print_loop:
 	;; get the char in DS:DX and increment the loop.
@@ -97,11 +97,11 @@ print_loop:
 	je  print_newline
 	;; Otherwise, print the character
 	int 10h
+	inc bh		; Printed a char
 	jmp print_loop
 print_done:
 	pop dx
 	pop cx
-	pop bx
 	pop ax
 	;; We are done here.
 	iret
@@ -109,12 +109,13 @@ print_newline:
 	;; We need to service a 0x0D (carriage return).
 	pusha			; Save EVERYTHING
 	mov ah, 03h
-	int 10h			; get the current cursor pos
+	int 10h 		; get the current cursor pos
 	mov ah, 02h
 	mov dh, 00h
 	inc dl			; Change the row and column values
 	int 10h
 	popa
+	inc bh		; Printed a char
 	jmp print_loop
 	
 	
