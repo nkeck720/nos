@@ -30,6 +30,7 @@
 	drv_fname db "DRVS", 00h		; Driver list file name
 	blank_line db 0Dh, 00h			; A blank line on the screen
 	prompt db "NOS> ", 00h			; Command prompt
+	ret_opcode ret				; A RET is a single-byte instruction, so we store it here for later
 start:
 	pop dl			; Get our boot drive
 	mov boot_drv, dl	; Save it
@@ -390,7 +391,7 @@ external_command:
 	mov ds, dx
 	mov dx, 0000h
 	;; ES:BX should be already set
-	stc
+	stc		  ; STC indicates the loading of an executable file
 	int 21h
 	;; Check to make sure the file was loaded. If not, we don't have an executable file
 	;; or the file was not found.
@@ -453,7 +454,21 @@ not_done_yet_flat:
 	je  no_flat_footer
 	inc bx
 	jmp test_flat_seg
-	
-	
-	
-	
+remove_footer_flat:
+	; All we need to do here is remove the footer from the code and run it.
+	; Get the pointer at the start of the footer
+	dec bx
+	dec bx
+	; We are now poining at the byte of the "E"
+	; Place a RET here so that the program will return from execution safely
+	mov es:bx, [ret_opcode]
+	inc bx
+	; Now pointing at the "F"
+	; save these two as NULLs
+	mov es:bx, 00h
+	inc bx
+	mov es:bx, 00h
+	; Now that we have stripped the file down to the code, call it at the starting address
+	call 9000h:0001h
+	; When we return here, we clear out the segment
+	jmp clear_code_seg
