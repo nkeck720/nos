@@ -317,7 +317,7 @@ unload_drv_list:
 	loop unload_drv_list	; Keep going until CX gets to 0
 	;; Driver list unloaded, we can return to home sweet Original DS.
 	pop ds
-	;; Now we can load up a basic CLI (Command line interface, not thr cli instruction :D)
+	;; Now we can load up a basic CLI (Command line interface, not the cli instruction :D)
 	;; Start by skipping a line just for visual effects
 	mov ah, 01h		; Print function
 	mov dx, blank_line
@@ -377,7 +377,7 @@ external_command:
 	mov mov ch, 00h
 	mov cl, 01d
 	mov dh, 00h
-	mov dl, 00h		;Again, we are assuming that the floppy drive A: is the boot drive.
+	mov dl, [boot_drv]
 	mov bx, 4000h		;The program segment, which will be used later to run the thing
 	mov es, bx
 	mov bx, 0000h
@@ -388,7 +388,7 @@ external_command:
 	;; by setting carry on call
 	push ds 	  ; Save this again
 	mov ah, 02h
-	mov dx, 9000h
+	mov dx, 4000h
 	mov ds, dx
 	mov dx, 0000h
 	;; ES:BX should be already set
@@ -409,6 +409,8 @@ external_command:
 bad_prog_file:
 	;; If we get here the user has either entered a bad command, or there was a disk error.
 	;; In any case we need to notify the user and return to a prompt.
+	push cs
+	pop ds
 	mov ah, 01h
 	mov dx, bad_command
 	int 21h
@@ -476,7 +478,7 @@ remove_footer_flat:
 	mov [old_ss], ax
 	mov ax, sp
 	mov [old_sp], ax
-	call 9000h:0001h
+	call 4000h:0001h
 	; Reset our stack
 	mov ax, [old_ss]
 	mov bx, [old_sp]
@@ -491,6 +493,8 @@ clear_code_flat:
 	mov es:bx, 00h
 	loop clear_code_flat
 	; Now return to the prompt.
+	push cs
+	pop ds
 	jmp command_prompt
 no_flat_footer:
 	; No footer was detected in the program.
@@ -515,3 +519,9 @@ run_segmented_prog:
 	; "EE"
 	; "ES" to signal end of file
 	; 0xFF signature
+	; [end file]
+	; We also have a bit of a problem: this file will probably be greater than 64K. We will need to check this,
+	; and if it is process it in blocks of 64K.
+	;
+	; Begin by checking the file size in the FSB
+	; Update the FSB
