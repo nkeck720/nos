@@ -84,7 +84,7 @@ print_string:
 	push dx
 	;; Now we need to start a loop where we print chars until we get to NULL.
 	mov ah, 0Eh
-	xor bh, bh
+	xor bx, bx		; If we have anything in BL the text will show up in random colors
 	mov cx, 0001h
 print_loop:
 	;; get the char in DS:DX and increment the loop.
