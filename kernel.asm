@@ -524,4 +524,4 @@ run_segmented_prog:
 	; and if it is process it in blocks of 64K.
 	;
 	; Begin by checking the file size in the FSB
-	; Update the FSB
+	
