@@ -23,7 +23,7 @@
 	; We want to create a sort of data area first, so here we jump over that.
 	jmp start
 	; We now begin our data area.
-	boot_drv db 00h							    ; For saving tho boot drive
+	boot_drv db 00h 						    ; For saving tho boot drive
 	old_ss dw 0000h 						    ; For saving our old SS locations.
 	old_sp dw 0000h 						    ; Same for old SP.
 	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
@@ -32,7 +32,7 @@
 	blank_line db 0Dh, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
-        ret_opcode db 0C3h				                    ; A RET is a single-byte instruction, so we store it here for later
+	ret_opcode db 0C3h						    ; A RET is a single-byte instruction, so we store it here for later
 start:
 	pop dx			; Get our boot drive
 	mov [boot_drv], dl	; Save it (INT 21 funcs will look at boot_drv)
@@ -500,8 +500,11 @@ clear_code_flat:
 	mov [es:bx], 00h
 	loop clear_code_flat
 	; Now return to the prompt.
-	push cs
 	pop ds
+	mov ax, [old_ss]
+	mov bx, [old_sp]
+	mov ss, ax
+	mov sp, bx
 	jmp command_prompt
 no_flat_footer:
 	; No footer was detected in the program.
