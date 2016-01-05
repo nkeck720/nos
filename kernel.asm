@@ -31,12 +31,10 @@
 	blank_line db 0Dh, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
-	ret_opcode ret				       ; A RET is a single-byte instruction, so we store it here for later
+ret_opcode:	ret				       ; A RET is a single-byte instruction, so we store it here for later
 start:
-	pop dl			; Get our boot drive
-	mov boot_drv, dl	; Save it
-	; save the boot drive where our INT21 functions will know about it
-	mov [8000h:0FFFFh], dl
+	pop dx			; Get our boot drive
+	mov [boot_drv], dl	; Save it (INT 21 funcs will look at boot_drv)
 	; The moment of truth.
 	; First we want to set up our segments to what we need. Since the kernel exists as
 	; a flat program, set ES and DS to CS.
@@ -53,7 +51,7 @@ start:
 	mov es, dx
 mbr_clear:
 	xor ah, ah
-	mov es:bx, ah
+	mov [es:bx], ah
 	loop mbr_clear
 	; We should now have the MBR area clean, set the stack up.
 	mov ax, 0000h		; Later in the kernel, we will do checks to see if the SP reaches 7C00 and if 
@@ -76,41 +74,46 @@ get_api:
 	; ANY VECTORS!
 	cli
 	; Get the file, by loading the FSB entry
-	xor bx, bx
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0000h
 	mov si, 0008d		;Changed as suggested by SeproMan
 	; The program, as stated, assumes the FSB is set on startup.
 	; INT21 is always the first file entry on the disk. If it isn't, then
 	; we will have to abort the boot.
 	; Get the first bytes of the file field.
-	mov ah, [2000h:si]
+	mov ah, [es:bx+si]
 	cmp ah, 80h
 	jne api_load_error
 	inc si	; To location of CHS
 	; Get each value and push them.
 	xor al, al
-	mov ah, [2000h:si]
+	mov ah, [es:bx+si]
 	push ax
 	inc si
-	mov ah, [2000h:si]
+	mov ah, [es:bx+si]
 	push ax
 	inc si
-	mov ah, [2000h:si]
+	mov ah, [es:bx+si]
 	push ax
 	inc si
 	; Get the "number of sectors" byte
-	mov ah, [2000h:si]
+	mov ah, [es:bx+si]
 	push ax
 	inc si
 	; Now we need to make sure file name is valid.
 	; Get each byte and compare it.
 	; First we need to get the INT21 bytes...
 	mov cx, 0005d
-	mov si, cx
+	mov si, 0013d		; So we get the correct values from the FSB
 c1:	
-	mov ah, [2000h:si]
+	mov ah, [es:bx+si]
 	push ax
 	dec si
 	loop c1
+	xor bx, bx
+	mov si, bx
+	mov es, bx
 	; Now we need to compare each one.
 	pop ax
 	cmp ah, "I"
@@ -166,8 +169,8 @@ c1:
 	mov es, bx
 	mov ax, 8000h
 	mov bx, 0000h	; Just to make sure
-	mov 0000:21h*4+2, bx
-	mov 0000:21h*4, ax
+	mov [0000:21h*4+2], bx
+	mov [0000:21h*4], ax
 	sti
 	; Kernel API is now active!
 	; We need to be sure that INT 21 works. Function 00 is an install

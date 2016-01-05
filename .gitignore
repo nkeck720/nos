@@ -1,0 +1,20 @@
+# This gitignore was created out of the annoyance of doing a compile test and forgetting to delete binaries
+# and subsequently doing a `git commit -a'. None of the binaries will need to make it into the repo.
+
+# Binaries from compile time
+*.bin
+*.out		# I sometimes use AS to test assemble a few small patches.
+a.out		# This will ignore my patches' binaries.
+*.o		# Any object files from AS
+*.obj		# Extended form of .o
+
+# Binaries and virtual disks (images)
+*.img
+*.iso
+*.flp
+*.vfd
+
+# Random miscellaneous files that don't go to the repo
+*.tar
+*.gz
+*~		# Those darned scratch files EMACS keeps leaving around!

@@ -18,7 +18,7 @@ mov dx, 0000h
 int 10h
 ;----------------------------------------	
 loadup:
-	push dl 	; Save boot drive
+	push dx 	; Save boot drive
 	mov ah, 00h
 	mov dl, 00h
 	int 13h
