@@ -23,6 +23,7 @@
 	; We want to create a sort of data area first, so here we jump over that.
 	jmp start
 	; We now begin our data area.
+	boot_drv db 00h							    ; For saving tho boot drive
 	old_ss dw 0000h 						    ; For saving our old SS locations.
 	old_sp dw 0000h 						    ; Same for old SP.
 	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
@@ -31,7 +32,7 @@
 	blank_line db 0Dh, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
-ret_opcode:	ret				       ; A RET is a single-byte instruction, so we store it here for later
+        ret_opcode db 0C3h				                    ; A RET is a single-byte instruction, so we store it here for later
 start:
 	pop dx			; Get our boot drive
 	mov [boot_drv], dl	; Save it (INT 21 funcs will look at boot_drv)
@@ -169,8 +170,8 @@ c1:
 	mov es, bx
 	mov ax, 8000h
 	mov bx, 0000h	; Just to make sure
-	mov [0000:21h*4+2], bx
-	mov [0000:21h*4], ax
+	mov [es:21h*4+2], bx
+	mov [es:21h*4], ax
 	sti
 	; Kernel API is now active!
 	; We need to be sure that INT 21 works. Function 00 is an install
@@ -215,8 +216,8 @@ c1:
 	;; <top>
 	;; | Original DS
 	;; <end>
-	mov ax, word ptr [0000h]	;Get the first word
-	mov bx, word ptr [0002h]	;And the second one
+	mov ax, word ptr 0000h		;Get the first word
+	mov bx, word ptr 0002h		;And the second one
 	cmp ax, 00AAh
 	;; If we have a bad file, we want to skip over it like it doesn't exist to
 	;; avoid errors.
@@ -224,23 +225,23 @@ c1:
 	cmp bx, 55FFh
 	jne drv_file_done
 	;; Now we will get the individual filenames.
-	mov cx, 0004h		;start the pointer at the byte after the header.
+	mov si, 0004h		;start the pointer at the byte after the header.
 	xor bh, bh		;for filename processing
 get_dem_filenames:
 	;; Scan until we get a hash
-	mov ah, byte ptr [ds:cx]
+	mov ah, byte ptr ds:si
 	cmp ah, "#"
 	je  we_got_one
 	;; So this one isn't a hash. See if it is our EOF.
 	cmp ah, 0Dh
 	je  drv_file_done
 	;; It isn't either one, so we increment the pointer and try again.
-	inc cx
+	inc si
 	jmp get_dem_filenames
 we_got_one:
 	;; We found a hash, we need to get each char until we get a closing asterisk.
-	inc cx
-	mov ah, byte ptr [ds:cx]
+	inc si
+	mov ah, byte ptr ds:si
 	cmp ah, "*"
 	je  store_filename
 	;; We don't have our closing mark yet, so store the char
@@ -255,10 +256,13 @@ store_filename:
 	;; <end>
 	;; We want to store this in DS starting at FFF0 (DRVS can't possibly be almost 64k long...)
 	;; Start by popping crud off of the stack.
-	mov cx, bh
+	mov bl, bh
+	xor bh, bh
+	mov cl, bl
+	mov ch, 00h
 pop_off_loop:	
 	pop ax
-	mov [ds:0FFF0h+bh], ah
+	mov [0FFF0h+bx], ah
 	loop pop_off_loop
 	;; We should have this now:
 	;; <top>
@@ -266,7 +270,7 @@ pop_off_loop:
 	;; <end>
 	;; Now we need to place the 0x00 string terminator on the string.
 	inc bh
-	mov [ds:0FFF0h+bh], 00h
+	mov [0FFF0h+bx], 00h
 	;; And here we need to load the driver. This will load it into TSR space. Curently, only one driver
 	;; may stay resident at a time until I work in some RAM tracking code.
 	push es 		;So we can recover later
@@ -280,7 +284,7 @@ pop_off_loop:
 	;; Check for an error
 	jc  disk_error
 	;; Now check the driver, making sure that the noted architecture is flat (F)
-	mov al, byte ptr [es:bx]
+	mov al, byte ptr es:bx
 	cmp al, "F"
 	;; If this isn't flat we will take the "scream and run" approach:
 	;; - Notify the user that a driver is invalid
@@ -316,7 +320,7 @@ drv_file_done:
 	xor bx, bx
 unload_drv_list:
 	mov si, cx		; For writing to RAM (thanks Sepro!)
-	mov ds:si, bh
+	mov [ds:si], bh
 	loop unload_drv_list	; Keep going until CX gets to 0
 	;; Driver list unloaded, we can return to home sweet Original DS.
 	pop ds
@@ -346,19 +350,19 @@ command_prompt:
 	mov bx, 0000h
 	;; String compare function is under development, so for now we want to use
 	;; the individual comparison.
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, "C"		; Command line is always in caps
 	jne external_command
 	inc bx
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, "L"
 	jne external_command
 	inc bx
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, "S"
 	jne external_command
 	inc bx			; We still have to check for the end of the line
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, 00h
 	jne external_command
 	;; We have a CLS command.
@@ -377,7 +381,7 @@ external_command:
 	;; First we want to make sure the FSB is up to date.
 	mov ah, 02h
 	mov al, 01d
-	mov mov ch, 00h
+	mov ch, 00h
 	mov cl, 01d
 	mov dh, 00h
 	mov dl, [boot_drv]
@@ -402,7 +406,7 @@ external_command:
 	jc  bad_prog_file
 	;; Now check for a flat or segmented program
 	pop ds			; We get this back now
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, "F"
 	je  run_flat_prog
 	cmp ah, "S"
@@ -435,15 +439,15 @@ run_flat_prog:
 	;; First test for the EF thingy.
 	mov bx, 0001h		; 64k-1 byte
 test_flat_seg:
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, "E"
 	jne not_done_yet_flat
 	inc bx
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, "F"
 	jne not_done_yet_flat
 	inc bx
-	mov ah, byte ptr [es:bx]
+	mov ah, byte ptr es:bx
 	cmp ah, 0FFh
 	jne not_done_yet_flat	; Just in case "EF" appears in the program/data.
 	;; If we get here, we have a program footer
@@ -467,13 +471,13 @@ remove_footer_flat:
 	dec bx
 	; We are now poining at the byte of the "E"
 	; Place a RET here so that the program will return from execution safely
-	mov es:bx, [ret_opcode]
+	mov [es:bx], ret_opcode
 	inc bx
 	; Now pointing at the "F"
 	; save these two as NULLs
-	mov es:bx, 00h
+	mov [es:bx], 00h
 	inc bx
-	mov es:bx, 00h
+	mov [es:bx], 00h
 	; Now that we have stripped the file down to the code, call it at the starting address,
 	; setting the stack segment before we do so.
 	push ss
@@ -493,7 +497,7 @@ remove_footer_flat:
 	; ES is already set
 clear_code_flat:
 	mov bx, cx
-	mov es:bx, 00h
+	mov [es:bx], 00h
 	loop clear_code_flat
 	; Now return to the prompt.
 	push cs
