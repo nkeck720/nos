@@ -1,8 +1,7 @@
 #!/bin/bash
-
 #
 # Compiles NOS to /dev/fd0
-#
+# 
 
 fasm bootload.asm bootload.bin || exit
 fasm fsb.asm fsb.bin || exit
