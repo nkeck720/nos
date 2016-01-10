@@ -410,7 +410,7 @@ external_command:
 	cmp ah, "F"
 	je  run_flat_prog
 	cmp ah, "S"
-	je run_segmented_prog
+	je  run_segmented_prog
 	;; Anything else and we have an invalid program.
 	jmp bad_prog_hdr
 bad_prog_file:
@@ -532,6 +532,62 @@ run_segmented_prog:
 	; [end file]
 	; We also have a bit of a problem: this file will probably be greater than 64K. We will need to check this,
 	; and if it is process it in blocks of 64K.
-	;
+
 	; Begin by checking the file size in the FSB
-	
+	; We will do this by finding the entry that matches the command line, then looking up its size in sectors.
+	; 128 sectors (assuming 512 bytes) gives exactly 64KiB.
+	push ds 		; Save
+	push es 		; these
+	mov ax, 9000h
+	mov bx, 2000h
+	mov ds, ax
+	mov es, bx
+	; Now we loop until we find an entry with the command as the name of the file
+	; Start at the first field
+	mov bx, 0008h
+	xor ax, ax
+	mov si, ax
+	mov di, 005d
+find_filename_loop:
+	mov al, byte ptr es:bx
+	cmp al, 80h
+	je  check_field
+	cmp al, 00h
+	je  bad_prog_file	; Something happened, notify the user
+	; Anything else, increment and reiterate
+	inc bx
+	jmp find_filename_loop
+check_field:
+	; We have a number of things to do here. First, check the executable flag (we are running a program after all)
+	mov al, byte ptr es:bx+13d
+	cmp al, 80h
+	jne no_good_field
+	; Now check the filename
+	mov ah, byte ptr es:di
+	mov al, byte ptr ds:si
+	cmp ah, al
+	jne no_good_field
+	; Check to see if it was a null if they were equal
+	cmp ah, 00h
+	je  got_field
+	; Otherwise, increment and continue
+	inc si
+	inc di
+	jmp check_field
+no_good_field:
+	; Field is not the one we were looking for
+	; Add 14d to bx
+	mov cx, 14d
+c2:	inc bx
+	loop c2
+	xor ax, ax
+	mov si, ax
+	mov di, ax
+	jmp find_filename_loop
+got_field:
+	; This is the one we are looking for. Get the total number of sectors in AL.
+	mov al, byte ptr es:bx+4d
+	cmp al, 128d
+	; If we have one that needs to be loaded in chunks, issue the message that this is not yet supported
+	jgt chunk_load_segmented
+	jmp load_file_segmented
