@@ -591,3 +591,14 @@ got_field:
 	; If we have one that needs to be loaded in chunks, issue the message that this is not yet supported
 	jgt chunk_load_segmented
 	jmp load_file_segmented
+chunk_load_segmented:
+	; For now we will tell the user that this program is greater than 64K, and act like we are done
+	pop es	     ; We now get
+	pop ds	     ; these back
+	mov ah, 01h
+	mov dx, past_limit
+	int 21h
+	jmp command_prompt
+load_file_segemented:
+	; We need to load the file into RAM and split it between the segments as described in the file.
+
