@@ -379,18 +379,21 @@ external_command:
 	;; We have a disk-based program to load, so here we want to load that
 	;; and set up the memory model of the said file.
 	;; First we want to make sure the FSB is up to date.
+	push es
 	mov ah, 02h
 	mov al, 01d
 	mov ch, 00h
 	mov cl, 01d
 	mov dh, 00h
 	mov dl, [boot_drv]
-	mov bx, 4000h		;The program segment, which will be used later to run the thing
+	mov bx, 2000h		; FSB segment
 	mov es, bx
 	mov bx, 0000h
 	int 13h
 	;; If there is a disk error, we want to call up the handler
 	jc  disk_io_error
+	;; Restore ES
+	pop es
 	;; Load up the file specified, and signal for the check of executable file
 	;; by setting carry on call
 	push ds 	  ; Save this again
@@ -530,75 +533,7 @@ run_segmented_prog:
 	; "ES" to signal end of file
 	; 0xFF signature
 	; [end file]
-	; We also have a bit of a problem: this file will probably be greater than 64K. We will need to check this,
-	; and if it is process it in blocks of 64K.
-
-	; Begin by checking the file size in the FSB
-	; We will do this by finding the entry that matches the command line, then looking up its size in sectors.
-	; 128 sectors (assuming 512 bytes) gives exactly 64KiB.
-	push ds 		; Save
-	push es 		; these
-	mov ax, 9000h
-	mov bx, 2000h
-	mov ds, ax
-	mov es, bx
-	; Now we loop until we find an entry with the command as the name of the file
-	; Start at the first field
-	mov bx, 0008h
-	xor ax, ax
-	mov si, ax
-	mov di, 005d
-find_filename_loop:
-	mov al, byte ptr es:bx
-	cmp al, 80h
-	je  check_field
-	cmp al, 00h
-	je  bad_prog_file	; Something happened, notify the user
-	; Anything else, increment and reiterate
-	inc bx
-	jmp find_filename_loop
-check_field:
-	; We have a number of things to do here. First, check the executable flag (we are running a program after all)
-	mov al, byte ptr es:bx+13d
-	cmp al, 80h
-	jne no_good_field
-	; Now check the filename
-	mov ah, byte ptr es:di
-	mov al, byte ptr ds:si
-	cmp ah, al
-	jne no_good_field
-	; Check to see if it was a null if they were equal
-	cmp ah, 00h
-	je  got_field
-	; Otherwise, increment and continue
-	inc si
-	inc di
-	jmp check_field
-no_good_field:
-	; Field is not the one we were looking for
-	; Add 14d to bx
-	mov cx, 14d
-c2:	inc bx
-	loop c2
-	xor ax, ax
-	mov si, ax
-	mov di, ax
-	jmp find_filename_loop
-got_field:
-	; This is the one we are looking for. Get the total number of sectors in AL.
-	mov al, byte ptr es:bx+4d
-	cmp al, 128d
-	; If we have one that needs to be loaded in chunks, issue the message that this is not yet supported
-	jgt chunk_load_segmented
-	jmp load_file_segmented
-chunk_load_segmented:
-	; For now we will tell the user that this program is greater than 64K, and act like we are done
-	pop es	     ; We now get
-	pop ds	     ; these back
-	mov ah, 01h
-	mov dx, past_limit
-	int 21h
-	jmp command_prompt
-load_file_segemented:
-	; We need to load the file into RAM and split it between the segments as described in the file.
-
+	;; Begin format checking
+	;; The code segment begins the program. If this does not exist we need to tell the user.
+	
+	
