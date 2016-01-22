@@ -63,6 +63,7 @@ stop:
 	jmp stop
 non_sys_disk:
 	;; A non-system disk is being booted from
+	xor bx, bx
 	mov ah, 0Eh
 	mov al, 'F'
 	int 10h
@@ -79,6 +80,7 @@ non_sys_disk:
 	int 10h 		;Char should still be in AL
 	jmp stop
 int13_err:
+	xor bx, bx
 	mov ah, 0Eh
 	mov al, 'I'
 	int 10h
@@ -95,6 +97,7 @@ int13_err:
 	int 10h 		;Again, char should still be in AL
 	jmp stop
 reset_err:
+	xor bx, bx
 	mov ah, 0Eh
 	mov al, 'R'
 	int 10h
