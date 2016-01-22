@@ -18,20 +18,18 @@ int 10h
 ;----------------------------------------	
 loadup:
 	mov ah, 00h
-	mov dl, 00h
+	pop dx
+	push dx
 	int 13h
 	jc  reset_err
-	;; Clear the screen
-	mov ah, 00h
-	mov al, 03h
-	int 10h
 
 kernel_load:
 	;; Load the filesystem into RAM
 	mov ah, 02h
 	mov al, 01h
 	mov ch, 00h
-	mov dh, 00h
+	pop dx
+	push dx ; Keep it saved
 	mov cl, 02h
 	; DL should be the boot drive
 	mov bx, 2000h
@@ -42,6 +40,8 @@ kernel_load:
 	;; Read kernel CHS and length from RAM
 	mov ch, [es:bx]
 	inc bx
+	pop dx
+	push dx
 	mov dh, [es:bx]
 	inc bx
 	mov cl, [es:bx]
@@ -50,7 +50,6 @@ kernel_load:
 	cmp al, 0FFh
 	je  non_sys_disk
 	mov ah, 02h
-	mov dl, 00h
 	mov bx, 1000h
 	mov es, bx
 	mov bx, 0000h
