@@ -109,6 +109,7 @@ reset_err:
 	mov al, 'R'
 	int 10h
 	int 10h
+	jmp stop
 
 ;---------------------------------------- 
 ; Fit this in the MBR and add boot signature
