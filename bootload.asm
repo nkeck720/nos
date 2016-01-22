@@ -8,7 +8,7 @@ org 7C00h
 mov ax, 9ch
 mov ss, ax
 mov sp, 4096d
-mov ax, 7C0h
+mov ax, 0000h
 mov ds, ax
 push dx ; Save the boot drive
 mov ah, 00h
