@@ -35,16 +35,12 @@
 	ret_opcode db 0C3h						    ; A RET is a single-byte instruction, so we store it here for later
 start:
 	pop dx			; Get our boot drive
+	push cs
+	push cs
+	pop  ds
+	pop  es
 	mov [boot_drv], dl	; Save it (INT 21 funcs will look at boot_drv)
 	; The moment of truth.
-	; First we want to set up our segments to what we need. Since the kernel exists as
-	; a flat program, set ES and DS to CS.
-	; This is a bad practice, but our bootloader should keep the stack within a sane RAM location,
-	; as assumed.
-	push cs
-	push cs
-	pop ds
-	pop es
 	; Now we clear out our bootloader, and set it to the stack.
 	mov cx, 0200h	   ; The size of one sector
 	mov bx, 7C00h	   ; The beginning location of our bootloader
