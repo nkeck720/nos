@@ -533,4 +533,28 @@ run_segmented_prog:
 	;; Begin format checking
 	;; The code segment begins the program. If this does not exist we need to tell the user.
 	
-	
+system_error_preapi:
+	; There is something horrendously wrong with the
+	; system before we loaded our API.
+	; Notify the user, and halt.
+	xor bx, bx
+	mov ah, 0Eh
+	mov al, 'B'
+	int 10h
+	mov al, 'O'
+	int 10h
+	int 10h
+	mov al, 'T'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'R'
+	int 10h
+	int 10h
+halt_forever:
+	cli
+	hmlt
+	jmp halt_forever
+
