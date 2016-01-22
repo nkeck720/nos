@@ -48,6 +48,7 @@ start:
 	mov es, dx
 mbr_clear:
 	xor ah, ah
+	inc bx
 	mov [es:bx], ah
 	loop mbr_clear
 	; We should now have the MBR area clean, set the stack up.
