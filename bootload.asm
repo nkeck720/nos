@@ -5,7 +5,7 @@ use16
 ; this code needs to be optimized.
 ;
 org 7C00h	
-mov ax, 9ch
+mov ax, 9c00h
 mov ss, ax
 mov sp, 4096d
 mov ax, 0000h
