@@ -553,6 +553,47 @@ system_error_preapi:
 	mov al, 'R'
 	int 10h
 	int 10h
+	jmp halt_forever
+api_load_error:
+	xor bx, bx
+	; Problems loading the API?
+	; This label can help!
+	mov ah, 0Eh
+	mov al, 'L'
+	int 10h
+	mov al, 'A'
+	int 10h
+	mov al, 'P'
+	int 10h
+	mov ah, 'I'
+	int 10h
+	mov ah, 20h
+	int 10h
+	mov ah, 'E'
+	int 10h
+	mov ah, 'R'
+	int 10h
+	int 10h
+	jmp halt_forever
+disk_error:
+	xor bx, bx
+	mov ah, 0Eh
+	mov al, 'D'
+	int 10h
+	mov al, 'I'
+	int 10h
+	mov al, 'S'
+	int 10h
+	mov al, 'K'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'R'
+	int 10h
+	int 10h
+	jmp halt_forever
 halt_forever:
 	cli
 	hmlt
