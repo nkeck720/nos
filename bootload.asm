@@ -13,9 +13,7 @@ mov ds, ax
 push dx ; Save the boot drive
 mov ah, 00h
 mov al, 03h
-int 10h
-mov ah, 02h
-mov dx, 0000h	
+mov bh, 00h
 int 10h
 ;----------------------------------------	
 loadup:
