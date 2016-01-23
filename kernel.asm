@@ -65,9 +65,6 @@ mbr_clear:
 	; Now we need to get the API into RAM. This will be stored in a file called INT21,
 	; and will be non-executable.
 get_api:
-	; This will involve changing interrupt vectors. ALWAYS DISABLE INTERRUPTS BEFORE CHANGING
-	; ANY VECTORS!
-	cli
 	; Get the file, by loading the FSB entry
 	mov bx, 2000h
 	mov es, bx
@@ -149,7 +146,6 @@ c1:
 	mov dl, [boot_drv]  ; Our boot drive
 	mov ah, 02h	; Read sectors
 	; And now, a brief word from INT 13h...
-	sti
 	mov bx, 8000h
 	mov es, bx
 	mov bx, 0000h
@@ -164,6 +160,7 @@ c1:
 	mov es, bx
 	mov ax, 8000h
 	mov bx, 0000h	; Just to make sure
+	cli		; Moved this down here as suggested by SeproMan
 	mov [es:21h*4+2], bx
 	mov [es:21h*4], ax
 	sti
