@@ -97,7 +97,7 @@ get_api:
 	; Get each byte and compare it.
 	; First we need to get the INT21 bytes...
 	mov cx, 0005d
-	mov si, 0013d		; So we get the correct values from the FSB
+	mov si, 0017d		; So we get the correct values from the FSB
 c1:	
 	mov ah, [es:bx+si]
 	push ax
