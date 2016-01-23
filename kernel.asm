@@ -300,12 +300,12 @@ pop_off_loop:
 	jmp get_dem_filenames
 drv_file_done:
 	;; When we get here we are done with our driver file. We need to unload DRVS (from RAM, no writing
-	;; to disk is necessary since we didn't modify anything in the file.
+	;; to disk is necessary since we didn't modify anything in the file.)
 	;; Stack:
 	;; <top>
 	;; | Original DS
 	;; <end>
-	mov cx, 0FFFFh
+	mov cx, 0000h
 	xor bx, bx
 unload_drv_list:
 	mov si, cx		; For writing to RAM (thanks Sepro!)
