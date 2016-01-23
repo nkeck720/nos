@@ -62,9 +62,6 @@ mbr_clear:
 	cmp ax, bx
 	; If they don't equal, something is wrong
 	jne system_error_preapi
-	; Clear out ES
-	xor dx, dx
-	mov es, dx
 	; Now we need to get the API into RAM. This will be stored in a file called INT21,
 	; and will be non-executable.
 get_api:
