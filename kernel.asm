@@ -140,7 +140,7 @@ c1:
 	pop dx		; Head, which goes in DH. We will need to back this up in SI.
 	mov si, dx
 	pop dx
-	mov ch, dh	; Sector
+	mov ch, dh	; Cylinder
 	mov dx, si
 	xor si, si
 	mov dl, [boot_drv]  ; Our boot drive
