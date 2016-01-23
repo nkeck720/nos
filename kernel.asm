@@ -195,7 +195,7 @@ c1:
 	;; First check for an error, and if so handle it appropriately
 	jc  disk_error
 	;; Now we need to parse the data. Formatting is as shown:
-	;; 0xAA00FF55 #<filename1>* #<filename2>* ... 0x0D
+	;; 0x55FF00AA #<filename1>* #<filename2>* ... 0x0D
 	;; This is all in one big string, the CR is the EOF mark (spaces not in file).
 	;; When scanning for filenames, anything not enclosed in #* is ignored.
 	;; In other files, an EOF is marked by 0xFF.
