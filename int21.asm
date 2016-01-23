@@ -34,7 +34,13 @@
 	cmp dx, 0FFFFh
 	jne main_func_check
 	;; Now check for the RAM byte (0x9000:0xFFFF)
-	mov ah, byte ptr [9000h:0FFFFh]
+	push es
+	push bx
+	mov bx, 9000h
+	mov es, bx
+	mov ah, byte ptr es:0FFFFh
+	pop bx
+	pop es
 	cmp ah, 55h
 	jne fraud_call
 	;; Check the carry flag
@@ -82,14 +88,16 @@ print_string:
 	; BH will be the number of chars that we write
 	push cx
 	push dx
+	push si
+	mov si, dx
 	;; Now we need to start a loop where we print chars until we get to NULL.
 	mov ah, 0Eh
 	xor bx, bx		; If we have anything in BL the text will show up in random colors
 	mov cx, 0001h
 print_loop:
 	;; get the char in DS:DX and increment the loop.
-	mov al, byte ptr [ds:dx]
-	inc dx
+	mov al, byte ptr ds:si
+	inc si
 	;; Check for a null or a newline (carriage return)
 	cmp al, 00h
 	je  print_done
@@ -100,6 +108,7 @@ print_loop:
 	inc bh		; Printed a char
 	jmp print_loop
 print_done:
+	pop si
 	pop dx
 	pop cx
 	pop ax
@@ -117,5 +126,25 @@ print_newline:
 	popa
 	inc bh		; Printed a char
 	jmp print_loop
-	
-	
+open_file:
+	; Empty for the sake of a test build
+	popf
+	iret
+close_file:
+	; Empty for the sake of a test build
+	popf
+	iret
+get_user_string:
+	; Empty for the sake of a test build
+	popf
+	iret
+nos_version:
+	popf
+	mov cx, "20"
+	iret
+kernel_panic:
+	; Halt
+	cli
+	hlt
+	jmp kernel_panic
+times 512-($-$$) db 00h

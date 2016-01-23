@@ -267,7 +267,7 @@ pop_off_loop:
 	;; <end>
 	;; Now we need to place the 0x00 string terminator on the string.
 	inc bh
-	mov [0FFF0h+bx], 00h
+	mov byte ptr 0FFF0h+bx, 00h
 	;; And here we need to load the driver. This will load it into TSR space. Curently, only one driver
 	;; may stay resident at a time until I work in some RAM tracking code.
 	push es 		;So we can recover later
@@ -283,25 +283,20 @@ pop_off_loop:
 	;; Now check the driver, making sure that the noted architecture is flat (F)
 	mov al, byte ptr es:bx
 	cmp al, "F"
-	;; If this isn't flat we will take the "scream and run" approach:
-	;; - Notify the user that a driver is invalid
-	;; - Stop any further driver loading
-	;; - Clear out the TSR space
-	;; - Continue with OS loading
-	;; - Do not use any external commands.
-	;; We will start this "safe mode" state by setting the first byte in the TSR space to 0x12.
-	jne run_for_your_life
+	; Instead of the previously suggested scream and run approach, we will simply tell the
+	; user that there was a problem with the driver.
+	jne drv_error
 	;; The driver is OK. Here we will run the code, by calling it. To exit, a program/driver
 	;; must "RET".
 	call 3000h:0001h
 	;; Check the return code to match a driver. Again, if this is not true then we need to run
 	;; for our lives.
 	cmp ch, 00h
-	jne run_for_your_life
+	jne drv_error
 	;; Check for a successful return code
 	cmp cl, 00h
 	;; If no success, then we could have an issue, so we need to run for it just in case.
-	jne run_for_your_life
+	jne drv_error
 	;; If we get here, we are successfully loaded.
 	pop cx
 	pop es
@@ -388,7 +383,7 @@ external_command:
 	mov bx, 0000h
 	int 13h
 	;; If there is a disk error, we want to call up the handler
-	jc  disk_io_error
+	jc  disk_error
 	;; Restore ES
 	pop es
 	;; Load up the file specified, and signal for the check of executable file
@@ -412,7 +407,7 @@ external_command:
 	cmp ah, "S"
 	je  run_segmented_prog
 	;; Anything else and we have an invalid program.
-	jmp bad_prog_hdr
+	jmp bad_prog_file
 bad_prog_file:
 	;; If we get here the user has either entered a bad command, or there was a disk error.
 	;; In any case we need to notify the user and return to a prompt.
@@ -471,13 +466,13 @@ remove_footer_flat:
 	dec bx
 	; We are now poining at the byte of the "E"
 	; Place a RET here so that the program will return from execution safely
-	mov [es:bx], ret_opcode
+	mov byte ptr es:bx, ret_opcode
 	inc bx
 	; Now pointing at the "F"
 	; save these two as NULLs
-	mov [es:bx], 00h
+	mov byte ptr es:bx, 00h
 	inc bx
-	mov [es:bx], 00h
+	mov byte ptr es:bx, 00h
 	; Now that we have stripped the file down to the code, call it at the starting address,
 	; setting the stack segment before we do so.
 	push ss
@@ -497,7 +492,7 @@ remove_footer_flat:
 	; ES is already set
 clear_code_flat:
 	mov bx, cx
-	mov [es:bx], 00h
+	mov byte ptr es:bx, 00h
 	loop clear_code_flat
 	; Now return to the prompt.
 	pop ds
@@ -510,7 +505,7 @@ no_flat_footer:
 	; No footer was detected in the program.
 	; Stop here, give a message, and clear out the seg.
 	mov ah, 01h
-	mov dx, bad_program
+	mov dx, bad_prog_file
 	int 21h
 	jmp clear_code_flat
 run_segmented_prog:
@@ -537,7 +532,7 @@ system_error_preapi:
 	; There is something horrendously wrong with the
 	; system before we loaded our API.
 	; Notify the user, and halt.
-	xor bx, bx
+	xor bh, bh
 	mov ah, 0Eh
 	mov al, 'B'
 	int 10h
@@ -555,7 +550,7 @@ system_error_preapi:
 	int 10h
 	jmp halt_forever
 api_load_error:
-	xor bx, bx
+	xor bh, bh
 	; Problems loading the API?
 	; This label can help!
 	mov ah, 0Eh
@@ -576,7 +571,7 @@ api_load_error:
 	int 10h
 	jmp halt_forever
 disk_error:
-	xor bx, bx
+	xor bh, bh
 	mov ah, 0Eh
 	mov al, 'D'
 	int 10h
@@ -594,8 +589,27 @@ disk_error:
 	int 10h
 	int 10h
 	jmp halt_forever
+drv_error:
+	xor bh, bh
+	mov ah, 0Eh
+	mov al, 'D'
+	int 10h
+	mov al, 'R'
+	int 10h
+	mov al, 'V'
+	int 10h
+	mov al, 20h
+	int 10h
+	mov al, 'E'
+	int 10h
+	mov al, 'R'
+	int 10h
+	int 10h
+	jmp halt_forever
 halt_forever:
 	cli
-	hmlt
+	hlt
 	jmp halt_forever
 
+; At current test build, we have 943 bytes.
+times 1024-($-$$) db 00h
