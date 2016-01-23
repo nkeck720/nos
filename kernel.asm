@@ -251,7 +251,10 @@ store_filename:
 	xor bh, bh
 	mov cl, bl
 	mov ch, 00h
-pop_off_loop:	
+	; Code snippet provided by SeproMan on the FASM board
+	mov  [0FFF0h+bx], ch	;CH=0
+pop_off_loop:
+	dec bx
 	pop ax
 	mov [0FFF0h+bx], ah
 	loop pop_off_loop
