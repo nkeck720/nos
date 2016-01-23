@@ -161,8 +161,8 @@ c1:
 	mov ax, 8000h
 	mov bx, 0000h	; Just to make sure
 	cli		; Moved this down here as suggested by SeproMan
-	mov [es:21h*4+2], bx
-	mov [es:21h*4], ax
+	mov [es:21h*4+2], ax
+	mov [es:21h*4], bx
 	sti
 	; Kernel API is now active!
 	; We need to be sure that INT 21 works. Function 00 is an install
