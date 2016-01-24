@@ -377,7 +377,7 @@ external_command:
 	mov ah, 02h
 	mov al, 01d
 	mov ch, 00h
-	mov cl, 01d
+	mov cl, 02d		; CL=02 is the FSB
 	mov dh, 00h
 	mov dl, [boot_drv]
 	mov bx, 2000h		; FSB segment
