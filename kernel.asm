@@ -418,6 +418,10 @@ bad_prog_file:
 	;; In any case we need to notify the user and return to a prompt.
 	push cs
 	pop ds
+	; There is still a value to be popped, pop it and
+	; leave no trace to clue as to whether or not it existed.
+	pop ax
+	xor ax, ax
 	mov ah, 01h
 	mov dx, bad_command
 	int 21h
