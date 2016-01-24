@@ -313,6 +313,11 @@ unload_drv_list:
 	loop unload_drv_list	; Keep going until CX gets to 0
 	;; Driver list unloaded, we can return to home sweet Original DS.
 	pop ds
+	; To make sure that ES holds 1000h, pointed out in Issue #22
+	push bx
+	mov bx, 1000h
+	mov es, bx
+	pop bx
 	;; Now we can load up a basic CLI (Command line interface, not the cli instruction :D)
 	;; Start by skipping a line just for visual effects
 	mov ah, 01h		; Print function
