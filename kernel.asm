@@ -392,10 +392,13 @@ external_command:
 	;; by setting carry on call
 	push ds 	  ; Save this again
 	mov ah, 02h
-	mov dx, 4000h
+	mov dx, 9000h
 	mov ds, dx
 	mov dx, 0000h
-	;; ES:BX should be already set
+	;; set up ES:BX
+	mov bx, 4000h
+	mov es, bx
+	mov bx, 0000h
 	stc		  ; STC indicates the loading of an executable file
 	int 21h
 	;; Check to make sure the file was loaded. If not, we don't have an executable file
