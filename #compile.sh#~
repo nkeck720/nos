@@ -16,19 +16,8 @@ read ans
 if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans"="" ]
 then
     dd if=NOS.img of=/dev/fd0
-    #
-    # Notify user in case of failure
-    #
-    ddret="$?"
-    if [ "$ddret" = 0 ]
-    then
-	echo "dd returned success"
-    else
-	echo "Error occured - dd returned $ddret"
-	echo "Check disk drive /dev/fd0 and try again"
+    echo "dd returned $
     exit
 fi
 #
 # Otherwise exit sucessfully
-#
-exit 0
