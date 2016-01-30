@@ -494,10 +494,11 @@ remove_footer_flat:
 	mov sp, 0FFFFh
 	call 4000h:0001h
 	; Reset our stack
-	mov ax, [old_ss]
-	mov bx, [old_sp]
-	mov ss, ax
-	mov sp, bx
+	;; Also need to reset DS
+	mov ax, 1000h
+	mov ds, ax
+	mov ss, word ptr old_ss
+	mov sp, word ptr old_sp
 	; When we return here, we clear out the segment
 	; Set up a loop to do so
 	mov cx, 0FFFFh
