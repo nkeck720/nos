@@ -32,7 +32,7 @@
 	blank_line db 0Dh, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
-	ret_opcode equ 0C3h						    ; A RET is a single-byte instruction, so we store it here for later
+	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
 start:
 	pop dx			; Get our boot drive
 	push cs
