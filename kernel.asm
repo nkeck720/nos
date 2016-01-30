@@ -492,6 +492,10 @@ remove_footer_flat:
 	mov ax, 7000h
 	mov ss, ax
 	mov sp, 0FFFFh
+	mov ax, 4000h
+	;; Set up data segments
+	mov ds, ax
+	mov es, ax
 	call 4000h:0001h
 	; Reset our stack
 	;; Also need to reset DS
@@ -501,7 +505,7 @@ remove_footer_flat:
 	mov sp, word ptr old_sp
 	; When we return here, we clear out the segment
 	; Set up a loop to do so
-	mov cx, 0FFFFh
+	mov cx, 0
 	; ES is already set
 clear_code_flat:
 	mov bx, cx
