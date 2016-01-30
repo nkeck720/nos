@@ -489,6 +489,9 @@ remove_footer_flat:
 	mov [old_ss], ax
 	mov ax, sp
 	mov [old_sp], ax
+	mov ax, 7000h
+	mov ss, ax
+	mov sp, 0FFFFh
 	call 4000h:0001h
 	; Reset our stack
 	mov ax, [old_ss]
