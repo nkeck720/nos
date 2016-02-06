@@ -77,55 +77,30 @@ install_check:
 	popf			; Required of all functions, to keep stack clean
 	mov ax, 5555h
 	iret
+	; This code snippet is provided by SeproMan on the FASM board.
+	; Thanks Sepro! :D
 print_string:
-	;; Our own little PRINT function.
-	;; Takes one arg in DX, which is the offset from DS that the string exists at.
-	;; The string is a, well, string of bytes, each printed until the function sees a NULL,
-	;; which is when he funcion quits.
-	popf
-	;; First save our registers.
 	push ax
-	; BH will be the number of chars that we write
 	push cx
-	push dx
 	push si
-	mov si, dx
-	;; Now we need to start a loop where we print chars until we get to NULL.
-	mov ah, 0Eh
-	xor bx, bx		; If we have anything in BL the text will show up in random colors
-	mov cx, 0001h
+	mov ah, 0Eh ;BIOS teletype
+	mov bh, 0 ;Display page 0, don't care about BL in video mode 3
+	mov ch, 0 ;Count characters
+	mov si, dx ;DX can't be used to address memory!!!
 print_loop:
-	;; get the char in DS:DX and increment the loop.
-	mov al, byte ptr ds:si
+	mov al, [ds:si]
 	inc si
-	;; Check for a null or a newline (carriage return)
-	cmp al, 00h
-	je  print_done
-	cmp al, 0Dh
-	je  print_newline
-	;; Otherwise, print the character
+	cmp al, 0
+	je print_done
 	int 10h
-	inc bh		; Printed a char
+	inc ch ;Printed a char
 	jmp print_loop
 print_done:
+	mov bh, ch ;BH is be the number of chars that we wrote
 	pop si
-	pop dx
 	pop cx
 	pop ax
-	;; We are done here.
 	iret
-print_newline:
-	;; We need to service a 0x0D (carriage return).
-	pusha			; Save EVERYTHING
-	mov ah, 03h
-	int 10h 		; get the current cursor pos
-	mov ah, 02h
-	mov dh, 00h
-	inc dl			; Change the row and column values
-	int 10h
-	popa
-	inc bh		; Printed a char
-	jmp print_loop
 open_file:
 	; Empty for the sake of a test build
 	popf
