@@ -69,7 +69,8 @@ main_func_check:
 	je  get_user_string	; Our getstring function
 	;; If none of these match, pop our flags, set carry, and return
 	popf
-	stc
+	; Set carry
+	or [esp+4], 1
 	iret
 install_check:
 	;; This is a simple install check function.
