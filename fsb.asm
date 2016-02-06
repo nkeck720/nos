@@ -14,7 +14,7 @@
 
 	;; INT21 must be our first file here. Otherwise the kernel will not boot.
 	db 80h			; Start of field
-	db 00h, 00h, 04h	; CHS of INT21
+	db 00h, 00h, 05h	; CHS of INT21
 	db 02h			; INT21 will be 1024 bytes
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
