@@ -524,6 +524,12 @@ no_flat_footer:
 	mov ah, 01h
 	mov dx, bad_prog_file
 	int 21h
+	; Set things up to have expected values
+	mov cx, 0
+	push ss
+	pop ax
+	mov word ptr old_ss, ax
+	mov word ptr old_sp, sp
 	jmp clear_code_flat
 run_segmented_prog:
 	; This gets a bit complicated, due to the format of the segmented program:
