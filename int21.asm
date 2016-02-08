@@ -97,10 +97,12 @@ print_loop:
 	inc ch ;Printed a char
 	jmp print_loop
 print_done:
-	mov bh, ch ;BH is be the number of chars that we wrote
+	mov bh, ch ;BH is the number of chars that we wrote
 	pop si
 	pop cx
 	pop ax
+	; Added the popf to keep the stack clean
+	popf
 	iret
 open_file:
 	; Empty for the sake of a test build
