@@ -166,15 +166,22 @@ get_file_name:
 	push bx
 get_filename_loop:
 	; Get the byte
-	mov bx, byte [ds:dx+ax]
+	
+	;; The following instruction needs more research. FASM refuses to assemble it,
+	;; but it may be the only way to do this.
+	; mov bl, [ds:dx+ax]
+
 	; Save it
-	mov byte [file_name+ax], bx
+
+	;; And same with this instruction, it thinks I am using bh as a symbol.
+	; mov byte [file_name+ax], bh
+	
 	inc ax
 	loop get_filename_loop
-	; Here we will need to check for the file name.
+	; Here we will need to check for the file name in the FS block.
 
 open_file_success:
-	or [esp+4], -3
+	or dword [esp+4], 0FFFFFFFDh
 	iret
 	; This will act as a data area for storing the file name/attributes
 	file_name      db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h     ; 8 bytes
@@ -188,7 +195,7 @@ c1:
 	; Even though we may not have the expected registers when we return, the
 	; carry flag is set to indicate error, and so appropriate action will need to be taken by the
 	; program.
-	or [esp+4], 1
+	or word [esp+4], 1
 	iret
 close_file:
 	; Empty for the sake of a test build

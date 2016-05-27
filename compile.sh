@@ -15,7 +15,7 @@ echo -e "Do you want me to write out to a floppy (Y/n)? \c"
 read ans
 if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans"="" ]
 then
-    dd if=NOS.img of=/dev/fd0
+    sudo dd if=NOS.img of=/dev/fd0
     #
     # Notify user in case of failure
     #
@@ -26,7 +26,8 @@ then
     else
 	echo "Error occured - dd returned $ddret"
 	echo "Check disk drive /dev/fd0 and try again"
-    exit
+	exit 1
+    fi
 fi
 #
 # Otherwise exit sucessfully
