@@ -80,29 +80,27 @@ install_check:
 	iret
 	; This code snippet is provided by SeproMan on the FASM board.
 	; Thanks Sepro! :D
-print_string:
-	push ax
-	push cx
-	push si
-	mov ah, 0Eh ;BIOS teletype
-	mov bh, 0 ;Display page 0, don't care about BL in video mode 3
-	mov ch, 0 ;Count characters
-	mov si, dx ;DX can't be used to address memory!!!
-print_loop:
-	mov al, [ds:si]
-	inc si
-	cmp al, 0
-	je print_done
-	int 10h
-	inc ch ;Printed a char
-	jmp print_loop
-print_done:
-	mov bh, ch ;BH is the number of chars that we wrote
-	pop si
-	pop cx
-	pop ax
-	; Added the popf to keep the stack clean
-	popf
+print_string: 
+	push ax 
+	push cx 
+	push si 
+	mov ah, 0Eh ;BIOS teletype 
+	mov bh, 0 ;Display page 0, don't care about BL in video mode 3 
+	mov ch, 0 ;Count characters 
+	mov si, dx ;DX can't be used to address memory!!! 
+print_loop: 
+	mov al, [ds:si] 
+	inc si 
+	cmp al, 0 
+	je print_done 
+	int 10h 
+	inc ch ;Printed a char 
+	jmp print_loop 
+print_done: 
+	mov bh, ch ;BH is be the number of chars that we wrote 
+	pop si 
+	pop cx 
+	pop ax 
 	iret
 open_file:
 	; The first thing we need to do is look at the params passed to us.
