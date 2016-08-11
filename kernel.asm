@@ -219,6 +219,8 @@ c1:
 	mov si, 0004h		;start the pointer at the byte after the header.
 	xor bh, bh		;for filename processing
 get_dem_filenames:
+	push es                 ;So we can recover later 
+	push si 
 	;; Scan until we get a hash
 	mov ah, byte ptr ds:si
 	cmp ah, "#"
@@ -297,7 +299,11 @@ pop_off_loop:
 	;; If we get here, we are successfully loaded.
 	pop cx
 	pop es
-	jmp get_dem_filenames
+	pop  si 
+	pop  es 
+	inc  si                 ;Skip asterisk 
+	mov  bh, 0              ;Reset counter 
+	jmp  get_dem_filenames 
 drv_file_done:
 	;; When we get here we are done with our driver file. We need to unload DRVS (from RAM, no writing
 	;; to disk is necessary since we didn't modify anything in the file.)
