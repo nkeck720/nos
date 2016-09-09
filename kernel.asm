@@ -17,7 +17,7 @@
 	; 6000:0000	   '	  '	  '   Extra for user programs  |--- With the exception of stack, these are not used in flat mode.
 	; 7000:0000	   '	  '	  '   Stack for user programs -|
 	; 8000:0000	   '	  '	  '   Kernel API space
-	; 9000:0000	   '	  '	  '   Command line space
+	; HMA		   '	  '	  '   Command line space
 	;
 	; And as such we now begin our code...
 	; We want to create a sort of data area first, so here we jump over that.
@@ -40,6 +40,9 @@ start:
 	pop  ds
 	pop  es
 	mov [boot_drv], dl	; Save it (INT 21 funcs will look at boot_drv)
+	pusha
+	call a20_line_ena	; Enable A20 for using the HMA later in command line space.
+	popa
 	; The moment of truth.
 	; Now we clear out our bootloader, and set it to the stack.
 	mov cx, 0200h	   ; The size of one sector
@@ -337,15 +340,15 @@ command_prompt:
 	int 21h
 	mov ah, 06h
 	push ds 		; Save original DS again
-	mov ax, 9000h
+	mov ax, 0FFFFh		; HMA
 	mov ds, ax		; The command line space as shown in the memory model
-	mov dx, 0000h
+	mov dx, 0010h
 	int 21h
 	;; Now, we switch back to the original DS and parse the command.
 	;; For now, the only builtin we have is CLS.
 	pop ds
 	push es 		; Save ES
-	mov bx, 9000h
+	mov bx, 0FFFFh
 	mov es, bx
 	mov bx, 0000h
 	;; String compare function is under development, so for now we want to use
@@ -398,9 +401,9 @@ external_command:
 	;; by setting carry on call
 	push ds 	  ; Save this again
 	mov ah, 02h
-	mov dx, 9000h
+	mov dx, 0FFFFh
 	mov ds, dx
-	mov dx, 0000h
+	mov dx, 0010h
 	;; set up ES:BX
 	mov bx, 4000h
 	mov es, bx
@@ -638,6 +641,46 @@ drv_error:
 halt_forever:
 	cli
 	hlt
+	jmp halt_forever
+a20_ena:
+	; Enable the high memory area.
+	mov     ax,2403h                ;--- A20-Gate Support ---
+	int     15h
+	jb      a20_ns                  ;INT 15h is not supported
+	cmp     ah,0
+	jnz     a20_ns                  ;INT 15h is not supported
+ 
+	mov     ax,2402h                ;--- A20-Gate Status ---
+	int     15h
+	jb      a20_failed              ;couldn't get status
+	cmp     ah,0
+	jnz     a20_failed              ;couldn't get status
+ 
+	cmp     al,1
+	jz      a20_activated           ;A20 is already activated
+ 
+	mov     ax,2401h                ;--- A20-Gate Activate ---
+	int     15h
+	jb      a20_failed              ;couldn't activate the gate
+	cmp     ah,0
+	jnz     a20_failed              ;couldn't activate the gate
+ 
+a20_activated:                  ;go on
+	ret
+a20_failed:
+a20_ns:
+	mov ah, 0Eh
+	mov al, "A"
+	int 10h
+	mov al, "2"
+	int 10h
+	mov al, "0"
+	int 10h
+	mov al, "E"
+	int 10h
+	mov al, "R"
+	int 10h
+	int 10h
 	jmp halt_forever
 
 ; At current test build, we have 943 bytes.
