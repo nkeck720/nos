@@ -555,10 +555,47 @@ run_segmented_prog:
 	; Extra segment stuff
 	; "EE"
 	; "ES" to signal end of file
-	; 0xFF signature
 	; [end file]
-	;; Begin format checking
-	;; The code segment begins the program. If this does not exist we need to tell the user.
+	
+	; First off, we need to find segments.
+	push ds
+	mov dx, 4000h
+	mov ds, dx
+	mov dx, 0000h
+find_segs_loop:
+	; Increment through the program to find the code segment
+	mov ah, byte ptr ds:dx
+	cmp ah, "C"
+	je  move_code
+	cmp ah, "D"
+	je  move_data
+	cmp ah, "E"
+	je  check_for_end
+	; Didn't find anything.
+	inc dx
+	jmp find_segs_loop
+move_code:
+	; Right now, we are pointed at the C, so increment and start loading.
+	inc dx
+move_code_loop:
+	mov ah, byte ptr ds:dx
+	; check for EC
+	cmp ah, "E"
+	je  check_end_code
+	; We simply keep it in this segment, so just increment and check for end again.
+	inc dx
+	jmp move_code_loop
+check_end_code:
+	; Pointing at E
+	inc dx
+	mov ah, byte ptr ds:dx
+	cmp ah, "C"
+	; Done!
+	dec dx
+	mov [ds:dx], 00h
+	inc dx
+	mov [ds:dx], 00h
+	jmp find_segs_loop
 	
 system_error_preapi:
 	; There is something horrendously wrong with the
