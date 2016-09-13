@@ -33,6 +33,7 @@
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
 	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
+	old_dx dw 0000h							    ; For loading segmented stuff
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -555,11 +556,203 @@ run_segmented_prog:
 	; Extra segment stuff
 	; "EE"
 	; "ES" to signal end of file
-	; 0xFF signature
 	; [end file]
-	;; Begin format checking
-	;; The code segment begins the program. If this does not exist we need to tell the user.
 	
+	; First off, we need to find segments.
+	push ds
+	mov dx, 4000h
+	mov ds, dx
+	mov dx, 0000h
+find_segs_loop:
+	; Increment through the program to find the code segment
+	mov ah, byte ptr ds:dx
+	cmp ah, "C"
+	je  move_code
+	cmp ah, "D"
+	je  move_data
+	cmp ah, "E"
+	je  check_for_end
+	; Didn't find anything.
+	inc dx
+	jmp find_segs_loop
+move_code:
+	; Right now, we are pointed at the C, so increment and start loading.
+	inc dx
+move_code_loop:
+	mov ah, byte ptr ds:dx
+	; check for EC
+	cmp ah, "E"
+	je  check_end_code
+save_code:
+	; We simply keep it in this segment, so just increment and check for end again.
+	inc dx
+	jmp move_code_loop
+check_end_code:
+	; Pointing at E
+	inc dx
+	mov ah, byte ptr ds:dx
+	cmp ah, "C"
+	jne save_code
+	; Done!
+	dec dx
+	mov [ds:dx], 00h
+	inc dx
+	mov [ds:dx], 00h
+	jmp find_segs_loop
+move_data:
+	; Pointing at D
+	inc dx
+move_data_loop:
+	mov ah, byte ptr ds:dx
+	; check for ED
+	cmp ah, "E"
+	je  check_end_data
+	; Here we need to move the data on over to 5000:0000
+	push ds
+	push dx
+	mov dx, 5000h
+	mov ds, dx
+save_data:
+	; We will save DX in RAM here
+	push ds
+	mov cx, 1000h
+	mov ds, cx
+	mov dx, [old_dx]
+	pop ds
+	mov ah, byte ptr ds:dx
+	inc dx
+	push ds
+	mov cx, 1000h
+	mov ds, cx
+	mov [old_dx], dx
+	pop ds
+	pop dx
+	pop ds
+	pop ax
+	jmp move_data_loop
+check_end_data:
+	; Pointing at E
+	inc dx
+	mov ah, byte ptr ds:dx
+	cmp ah, "D"
+	jne save_data
+	; Done!
+	dec dx
+	mov [ds:dx], 00h
+	inc dx
+	mov [ds:dx], 00h
+	jmp find_segs_loop
+check_for_end:
+	; Looking for either extra or end here.
+	; Pointing at E
+	inc dx
+	cmp ah, "S"
+	jne check_for_extra
+	; We are finished.
+	pop ds
+	; Load up the program segments
+	push ss
+	pop ax
+	mov [old_ss], ax
+	push sp
+	pop ax
+	mov [old_sp], ax
+	mov dx, 5000h
+	mov ds, dx
+	mov bx, 6000h
+	mov es, bx
+	mov ax, 0FFFFh
+	mov sp, ax
+	mov ax, 7000h
+	mov ss, ax
+	xor ax, ax
+	xor bx, bx
+	xor cx, cx
+	xor dx, dx
+	; go to the program
+	call 4000h:0001h
+	; We have returned
+	; Reset our stack
+	; Also need to reset DS
+	mov ax, 1000h
+	mov ds, ax
+	cli
+	mov ax, word ptr old_ss
+	mov ss, ax 
+	mov ax, word ptr old_sp
+	mov sp, ax
+	sti
+	; When we return here, we clear out the segments
+	; Set up a loop to do so
+	mov cx, 0
+	xor ax, ax
+	mov bx, 4000h
+	mov es, bx
+clear_code_seg:
+	mov bx, cx
+	mov byte ptr es:bx, ah
+	loop clear_code_seg
+	; Clear data
+	mov cx, 0
+	mov bx, 5000h
+	mov es, bx
+clear_data_seg:
+	mov bx, cx
+	mov byte ptr es:bx, ah
+	loop clear_code_seg
+	; Clear extra
+	mov cx, 0
+	mov bx, 6000h
+	mov es, bx
+clear_extra_seg:
+	mov bx, cx
+	mov byte ptr es:bx, ah
+	loop clear_code_seg
+check_for_extra:
+	; Pointing at byte after E
+	; We are sure this is extra
+	; load it
+	mov word ptr old_dx, 0000h
+move_extra_loop:
+	mov ah, byte ptr ds:dx
+	; check for EE
+	cmp ah, "E"
+	je  check_end_extra
+	; Here we need to move the data on over to 6000:0000
+	push ds				;1
+	push dx				;2
+	mov dx, 6000h
+	mov ds, dx
+save_extra:
+	; We will save DX in RAM here
+	push ds				;3
+	mov cx, 1000h
+	mov ds, cx
+	mov dx, [old_dx]
+	pop ds
+	mov ah, byte ptr ds:dx
+	inc dx
+	push ds				;4
+	mov cx, 1000h
+	mov ds, cx
+	mov [old_dx], dx
+	pop ds
+	pop dx
+	pop ds
+	pop ax
+	jmp move_extra_loop
+check_end_extra:
+	; Pointing at "E"
+	inc dx
+	mov ah, byte ptr ds:dx
+	cmp ah, "E"
+	jne save_extra
+	; At the end
+	dec dx
+	mov [ds:dx], 00h
+	inc dx
+	mov [ds:dx], 00h
+	jmp find_segs_loop
 system_error_preapi:
 	; There is something horrendously wrong with the
 	; system before we loaded our API.
