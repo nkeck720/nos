@@ -628,6 +628,7 @@ save_data:
 	pop ds
 	pop dx
 	pop ds
+	pop ax
 	jmp move_data_loop
 check_end_data:
 	; Pointing at E
@@ -670,9 +671,88 @@ check_for_end:
 	xor dx, dx
 	; go to the program
 	call 4000h:0001h
-	
-
-	
+	; We have returned
+	; Reset our stack
+	; Also need to reset DS
+	mov ax, 1000h
+	mov ds, ax
+	cli
+	mov ax, word ptr old_ss
+	mov ss, ax 
+	mov ax, word ptr old_sp
+	mov sp, ax
+	sti
+	; When we return here, we clear out the segments
+	; Set up a loop to do so
+	mov cx, 0
+	xor ax, ax
+	mov bx, 4000h
+	mov es, bx
+clear_code_seg:
+	mov bx, cx
+	mov byte ptr es:bx, ah
+	loop clear_code_seg
+	; Clear data
+	mov cx, 0
+	mov bx, 5000h
+	mov es, bx
+clear_data_seg:
+	mov bx, cx
+	mov byte ptr es:bx, ah
+	loop clear_code_seg
+	; Clear extra
+	mov cx, 0
+	mov bx, 6000h
+	mov es, bx
+clear_extra_seg:
+	mov bx, cx
+	mov byte ptr es:bx, ah
+	loop clear_code_seg
+check_for_extra:
+	; Pointing at byte after E
+	; We are sure this is extra
+	; load it
+	mov word ptr old_dx, 0000h
+move_extra_loop:
+	mov ah, byte ptr ds:dx
+	; check for EE
+	cmp ah, "E"
+	je  check_end_extra
+	; Here we need to move the data on over to 6000:0000
+	push ds				;1
+	push dx				;2
+	mov dx, 6000h
+	mov ds, dx
+save_extra:
+	; We will save DX in RAM here
+	push ds				;3
+	mov cx, 1000h
+	mov ds, cx
+	mov dx, [old_dx]
+	pop ds
+	mov ah, byte ptr ds:dx
+	inc dx
+	push ds				;4
+	mov cx, 1000h
+	mov ds, cx
+	mov [old_dx], dx
+	pop ds
+	pop dx
+	pop ds
+	pop ax
+	jmp move_extra_loop
+check_end_extra:
+	; Pointing at "E"
+	inc dx
+	mov ah, byte ptr ds:dx
+	cmp ah, "E"
+	jne save_extra
+	; At the end
+	dec dx
+	mov [ds:dx], 00h
+	inc dx
+	mov [ds:dx], 00h
+	jmp find_segs_loop
 system_error_preapi:
 	; There is something horrendously wrong with the
 	; system before we loaded our API.
