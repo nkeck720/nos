@@ -155,7 +155,6 @@ c1:
 	mov bx, 0000h
 	int 13h
 	jc  api_load_error
-	cli
 	; Our Kernel API is now loaded, so we need to set our IVT values.
 	xor ax, ax
 	xor bx, bx
