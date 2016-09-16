@@ -350,7 +350,7 @@ command_prompt:
 	push es 		; Save ES
 	mov bx, 0FFFFh
 	mov es, bx
-	mov bx, 0000h
+	mov bx, 0010h
 	;; String compare function is under development, so for now we want to use
 	;; the individual comparison.
 	mov ah, byte ptr es:bx
