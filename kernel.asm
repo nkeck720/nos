@@ -33,7 +33,7 @@
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
 	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
-	old_dx dw 0000h							    ; For loading segmented stuff
+	old_dx dw 0000h 						    ; For loading segmented stuff
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -222,7 +222,7 @@ c1:
 	mov si, 0004h		;start the pointer at the byte after the header.
 	xor bh, bh		;for filename processing
 get_dem_filenames:
-	push es                 ;So we can recover later 
+	push es 		;So we can recover later 
 	push si 
 	;; Scan until we get a hash
 	mov ah, byte ptr ds:si
@@ -304,8 +304,8 @@ pop_off_loop:
 	pop es
 	pop  si 
 	pop  es 
-	inc  si                 ;Skip asterisk 
-	mov  bh, 0              ;Reset counter 
+	inc  si 		;Skip asterisk 
+	mov  bh, 0		;Reset counter 
 	jmp  get_dem_filenames 
 drv_file_done:
 	;; When we get here we are done with our driver file. We need to unload DRVS (from RAM, no writing
@@ -564,7 +564,11 @@ run_segmented_prog:
 	mov dx, 0000h
 find_segs_loop:
 	; Increment through the program to find the code segment
-	mov ah, byte ptr ds:dx
+	; Can't use DX to address memory. This is a simple hack to fix that
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	cmp ah, "C"
 	je  move_code
 	cmp ah, "D"
@@ -578,7 +582,11 @@ move_code:
 	; Right now, we are pointed at the C, so increment and start loading.
 	inc dx
 move_code_loop:
-	mov ah, byte ptr ds:dx
+	 ; Can't use DX to address memory. This is a simple hack to fix that
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	; check for EC
 	cmp ah, "E"
 	je  check_end_code
@@ -589,20 +597,32 @@ save_code:
 check_end_code:
 	; Pointing at E
 	inc dx
-	mov ah, byte ptr ds:dx
+	 ; Can't use DX to address memory. This is a simple hack to fix that
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	cmp ah, "C"
 	jne save_code
 	; Done!
+	push si
 	dec dx
-	mov [ds:dx], 00h
+	mov si, dx
+	mov byte ptr ds:si, 00h
 	inc dx
-	mov [ds:dx], 00h
+	mov si, dx
+	mov byte ptr ds:si, 00h
+	pop si
 	jmp find_segs_loop
 move_data:
 	; Pointing at D
 	inc dx
 move_data_loop:
-	mov ah, byte ptr ds:dx
+	; Can't use DX to address memory. This is a simple hack to fix that
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	; check for ED
 	cmp ah, "E"
 	je  check_end_data
@@ -618,7 +638,10 @@ save_data:
 	mov ds, cx
 	mov dx, [old_dx]
 	pop ds
-	mov ah, byte ptr ds:dx
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	inc dx
 	push ds
 	mov cx, 1000h
@@ -632,14 +655,21 @@ save_data:
 check_end_data:
 	; Pointing at E
 	inc dx
-	mov ah, byte ptr ds:dx
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	cmp ah, "D"
 	jne save_data
 	; Done!
+	push si
 	dec dx
-	mov [ds:dx], 00h
+	mov si, dx
+	mov byte ptr ds:si, 00h
 	inc dx
-	mov [ds:dx], 00h
+	mov si, dx
+	mov byte ptr ds:si, 00h
+	pop si
 	jmp find_segs_loop
 check_for_end:
 	; Looking for either extra or end here.
@@ -713,25 +743,32 @@ check_for_extra:
 	; load it
 	mov word ptr old_dx, 0000h
 move_extra_loop:
-	mov ah, byte ptr ds:dx
+	; Can't use DX to address memory. This is a simple hack to fix that
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	; check for EE
 	cmp ah, "E"
 	je  check_end_extra
 	; Here we need to move the data on over to 6000:0000
-	push ds				;1
-	push dx				;2
+	push ds 			;1
+	push dx 			;2
 	mov dx, 6000h
 	mov ds, dx
 save_extra:
 	; We will save DX in RAM here
-	push ds				;3
+	push ds 			;3
 	mov cx, 1000h
 	mov ds, cx
 	mov dx, [old_dx]
 	pop ds
-	mov ah, byte ptr ds:dx
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	inc dx
-	push ds				;4
+	push ds 			;4
 	mov cx, 1000h
 	mov ds, cx
 	mov [old_dx], dx
@@ -743,14 +780,21 @@ save_extra:
 check_end_extra:
 	; Pointing at "E"
 	inc dx
-	mov ah, byte ptr ds:dx
+	push si
+	mov si, dx
+	mov ah, byte ptr ds:si
+	pop si
 	cmp ah, "E"
 	jne save_extra
 	; At the end
+	push si
 	dec dx
-	mov [ds:dx], 00h
+	mov si, dx
+	mov byte ptr ds:si, 00h
 	inc dx
-	mov [ds:dx], 00h
+	mov si, dx
+	mov byte ptr ds:si, 00h
+	pop si
 	jmp find_segs_loop
 system_error_preapi:
 	; There is something horrendously wrong with the
@@ -834,30 +878,30 @@ halt_forever:
 	cli
 	hlt
 	jmp halt_forever
-a20_ena:
+a20_line_ena:
 	; Enable the high memory area.
-	mov     ax,2403h                ;--- A20-Gate Support ---
-	int     15h
-	jb      a20_ns                  ;INT 15h is not supported
-	cmp     ah,0
-	jnz     a20_ns                  ;INT 15h is not supported
+	mov	ax,2403h		;--- A20-Gate Support ---
+	int	15h
+	jb	a20_ns			;INT 15h is not supported
+	cmp	ah,0
+	jnz	a20_ns			;INT 15h is not supported
  
-	mov     ax,2402h                ;--- A20-Gate Status ---
-	int     15h
-	jb      a20_failed              ;couldn't get status
-	cmp     ah,0
-	jnz     a20_failed              ;couldn't get status
+	mov	ax,2402h		;--- A20-Gate Status ---
+	int	15h
+	jb	a20_failed		;couldn't get status
+	cmp	ah,0
+	jnz	a20_failed		;couldn't get status
  
-	cmp     al,1
-	jz      a20_activated           ;A20 is already activated
+	cmp	al,1
+	jz	a20_activated		;A20 is already activated
  
-	mov     ax,2401h                ;--- A20-Gate Activate ---
-	int     15h
-	jb      a20_failed              ;couldn't activate the gate
-	cmp     ah,0
-	jnz     a20_failed              ;couldn't activate the gate
+	mov	ax,2401h		;--- A20-Gate Activate ---
+	int	15h
+	jb	a20_failed		;couldn't activate the gate
+	cmp	ah,0
+	jnz	a20_failed		;couldn't activate the gate
  
-a20_activated:                  ;go on
+a20_activated:			;go on
 	ret
 a20_failed:
 a20_ns:
@@ -875,5 +919,5 @@ a20_ns:
 	int 10h
 	jmp halt_forever
 
-; At current test build, we have 943 bytes.
-times 1024-($-$$) db 00h
+; At current test build, we have 1429 bytes.
+times 1536-($-$$) db 00h
