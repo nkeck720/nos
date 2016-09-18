@@ -111,8 +111,25 @@ close_file:
 	popf
 	iret
 get_user_string:
-	; Empty for the sake of a test build
 	popf
+	; Args:
+	; DS:DX - address to save string at
+	mov si, dx
+get_char_loop:
+	; Start by getting a char
+	mov ah, 00h
+	int 16h
+	; Check to see if AL is a CR
+	cmp al, 0Dh
+	je  get_string_done
+	; Otherwise copy the char and begin again
+	mov [ds:si], al
+	inc si
+	jmp get_char_loop
+get_string_done:
+	; Place our NULL and exit
+	mov [ds:si], 00h
+	xor si, si
 	iret
 nos_version:
 	popf
