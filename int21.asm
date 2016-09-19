@@ -103,9 +103,39 @@ print_done:
 	pop ax 
 	iret
 open_file:
-	; Took this code out. Can't see where I was going with this.
 	popf
+	pusha
+	; Load up the FSB
+	mov ah, 02h
+	mov al, 01h
+	mov ch, 00h
+	mov dh, 00h
+	mov cl, 02h
+	; Get the boot drive from the kernel (4th byte in kernel space)
+	mov dl, byte ptr 1000h:0003h
+	mov bx, 2000h
+	mov es, bx
+	xor bx, bx
+	int 13h
+	jc  disk_error
+	popa
+	pusha			; Keep a copy saved
+	; Read through DS:DX to find the filename
+	mov si, dx
+	; AH is pointer to filename char
+	xor ah, ah
+open_filename_loop:
+	mov al, byte ptr ds:si
+	; Check for null
+	cmp al, 00h
+	je  done_open_filename_loop
+	mov byte [filename+ah], al			; need to test for alternatives of this
+	inc si
+	jmp open_filename_loop
+	
 	iret
+open_file_data:
+	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
 close_file:
 	; Empty for the sake of a test build
 	popf
