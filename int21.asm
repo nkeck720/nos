@@ -129,7 +129,21 @@ open_filename_loop:
 	; Check for null
 	cmp al, 00h
 	je  done_open_filename_loop
-	mov byte [filename+ah], al			; need to test for alternatives of this
+	; AH=pointer, AL=byte
+	mov bx, filename    ; Address of filename, in data area below
+	push bx
+	push ax
+	xor al, al
+	mov al, ah
+	xor ah, ah
+	; AX=00<ptr byte>h
+	add ax, bx
+	mov bx, ax
+	;BL=ptr byte
+	pop ax
+	mov byte ptr cs:bx, al
+	mov ah, bl
+	pop bx
 	inc si
 	jmp open_filename_loop
 	
