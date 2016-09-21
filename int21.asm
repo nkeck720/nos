@@ -146,6 +146,14 @@ open_filename_loop:
 	pop bx
 	inc si
 	jmp open_filename_loop
+	; Increment through the FSB starting at the file fields (8 bytes in)
+	; File field format:
+	; 0x80
+	; C,H,S of file (3 bytes)
+	; Number of blocks (1 byte)
+	; Filename with 0x00 padding (8 bytes)
+	; Executable flag (1 byte)
+	; 0xFF
 	
 	iret
 open_file_data:
