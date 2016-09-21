@@ -796,6 +796,8 @@ check_end_extra:
 	mov byte ptr ds:si, 00h
 	pop si
 	jmp find_segs_loop
+	
+
 system_error_preapi:
 	; There is something horrendously wrong with the
 	; system before we loaded our API.
