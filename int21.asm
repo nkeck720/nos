@@ -128,7 +128,7 @@ get_char_loop:
 	jmp get_char_loop
 get_string_done:
 	; Place our NULL and exit
-	mov [ds:si], 00h
+	mov byte [ds:si], 00h
 	xor si, si
 	iret
 nos_version:
