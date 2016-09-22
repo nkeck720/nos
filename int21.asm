@@ -103,9 +103,141 @@ print_done:
 	pop ax 
 	iret
 open_file:
-	; Took this code out. Can't see where I was going with this.
 	popf
+	pusha
+	; Load up the FSB
+	mov ah, 02h
+	mov al, 01h
+	mov ch, 00h
+	mov dh, 00h
+	mov cl, 02h
+	; Get the boot drive from the kernel (4th byte in kernel space)
+	mov dl, byte ptr 1000h:0003h
+	mov bx, 2000h
+	mov es, bx
+	xor bx, bx
+	int 13h
+	jc  disk_error
+	popa
+	push es
+	push bx
+	; Read through DS:DX to find the filename
+	mov si, dx
+	; AH is pointer to filename char
+	xor ah, ah
+open_filename_loop:
+	mov al, byte ptr ds:si
+	; Check for null
+	cmp al, 00h
+	je  done_open_filename_loop
+	; AH=pointer, AL=byte
+	mov bx, filename    ; Address of filename, in data area below
+	push bx
+	push ax
+	xor al, al
+	mov al, ah
+	xor ah, ah
+	; AX=00<ptr byte>h
+	add ax, bx
+	mov bx, ax
+	;BL=ptr byte
+	pop ax
+	mov byte ptr cs:bx, al
+	mov ah, bl
+	pop bx
+	inc si
+	jmp open_filename_loop
+	; Increment through the FSB starting at the file fields (8 bytes in)
+	; File field format:
+	; 0x80
+	; C,H,S of file (3 bytes)
+	; Number of blocks (1 byte)
+	; Filename with 0x00 padding (8 bytes)
+	; Executable flag (1 byte)
+	; 0xFF
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0007h
+find_files_loop:
+	; Check for a file
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	je  found_field
+disk_error:
+	; Otherwise we are done here, and have not found our file.
+	pop bx
+	pop es
+	or byte [esp+4], 1
 	iret
+found_field:
+	; inc through the field to the filename (pointing at 0x80)
+	inc bx
+	inc bx
+	inc bx
+	inc bx
+	inc bx
+	mov si, filename
+	; Compare the filenames
+cmp_name_loop:
+	mov ah, byte ptr es:bx
+	mov al, byte ptr cs:si
+	cmp ah, 00h
+	je  check_end_filename
+	cmp ah, al
+	; If not equal then go to the end of the field and check for another one
+	jne not_right_file
+	; inc and check next char
+	inc bx
+	inc si
+	jmp cmp_name_loop
+check_end_filename:
+	; Looking at the end of the file name. If they are the same then we have the correct file and we need
+	; to load it up.
+	cmp ah, al
+	jne not_right_file
+	; We have a correct filename. Load it up, point at beginning of file field.
+go_back_to_80:
+	dec bx
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	jne go_back_to_80
+	; Get CHS info
+	inc bx
+	mov ch, byte ptr es:bx
+	inc bx
+	mov dh, byte ptr es:bx
+	inc bx
+	mov cl, byte ptr es:bx
+	; Now the number of blocks
+	inc bx
+	mov al, byte ptr es:bx
+	mov byte ptr cs:blocks, al
+	mov dl, byte ptr 1000h:0003h
+	pop es
+	pop bx
+	mov ah, 02h
+	int 13h
+	jc  disk_error
+	; Move the blocks into AL and quit
+	mov al, byte ptr cs:blocks
+	iret
+not_right_file:
+	; Somewhere in the filename. Go back to the beginning of the field
+	dec bx
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	jne not_right_file
+	; Back to 0x80. Go to byte after 0xff
+go_to_end:
+	mov cx, 14d
+	inc bx
+	loop go_to_end
+	; Go back to check loop
+	jmp find_files_loop
+open_file_data:
+	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
+	blocks   db 00h						; For the number of blocks later
+	
 close_file:
 	; Empty for the sake of a test build
 	popf
