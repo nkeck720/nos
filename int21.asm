@@ -112,7 +112,13 @@ open_file:
 	mov dh, 00h
 	mov cl, 02h
 	; Get the boot drive from the kernel (4th byte in kernel space)
-	mov dl, byte ptr 1000h:0003h
+	push ds
+	push ax
+	mov ax, 1000h
+	mov ds, ax
+	pop ax
+	mov dl, ptr ds:0003h
+	pop ds
 	mov bx, 2000h
 	mov es, bx
 	xor bx, bx
@@ -147,6 +153,7 @@ open_filename_loop:
 	pop bx
 	inc si
 	jmp open_filename_loop
+done_open_filename_loop:
 	; Increment through the FSB starting at the file fields (8 bytes in)
 	; File field format:
 	; 0x80
@@ -212,7 +219,13 @@ go_back_to_80:
 	inc bx
 	mov al, byte ptr es:bx
 	mov byte ptr cs:blocks, al
-	mov dl, byte ptr 1000h:0003h
+	push ds
+	push ax
+	mov ax, 1000h
+	mov ds, ax
+	pop ax
+	mov dl, byte ptr ds:0003h
+	pop ds
 	pop es
 	pop bx
 	mov ah, 02h
@@ -236,7 +249,7 @@ go_to_end:
 	jmp find_files_loop
 open_file_data:
 	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
-	blocks   db 00h						; For the number of blocks later
+	blocks	 db 00h 					; For the number of blocks later
 	
 close_file:
 	; Empty for the sake of a test build
