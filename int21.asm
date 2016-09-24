@@ -285,4 +285,4 @@ kernel_panic:
 	cli
 	hlt
 	jmp kernel_panic
-times 512-($-$$) db 00h
+times 1024-($-$$) db 00h
