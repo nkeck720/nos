@@ -163,6 +163,7 @@ c1:
 	mov es, bx
 	mov ax, 8000h
 	mov bx, 0000h	; Just to make sure
+	mov es, bx 		; Make sure ES is set to 0000
 	cli		; Moved this down here as suggested by SeproMan
 	mov [es:21h*4+2], ax
 	mov [es:21h*4], bx
