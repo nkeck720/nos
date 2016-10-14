@@ -282,11 +282,11 @@ nos_version:
 	iret
 kernel_panic:
 	; Turn on all keylights and Halt
-        mov dx, 60h 
-        mov al, 0EDh 
-        out dx, al
+	mov dx, 60h 
+	mov al, 0EDh 
+	out dx, al
 	mov ax, 00000111b  
-        out dx, al
+	out dx, al
 	cli
 	hlt
 	jmp kernel_panic
