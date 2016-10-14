@@ -23,7 +23,6 @@
 	;;	   RAM pointed to by DS:DX.
 
 	;; First we want to check if the kernel panic thing is being called.
-	pushf
 	pushf			; For later functions
 	cmp ax, 0123h
 	jne main_func_check
