@@ -79,7 +79,8 @@ install_check:
 	iret
 	; This code snippet is provided by SeproMan on the FASM board.
 	; Thanks Sepro! :D
-print_string: 
+print_string:
+	popf
 	push ax 
 	push cx 
 	push si 
