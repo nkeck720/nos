@@ -197,7 +197,8 @@ c1:
 	mov bx, 0000h
 	int 21h
 	;; First check for an error, and if so handle it appropriately
-	jc  disk_error
+	;; IF there is no DRVS file, simply skip over this bit
+	jc  drv_nofile
 	;; Now we need to parse the data. Formatting is as shown:
 	;; 0x55FF00AA #<filename1>* #<filename2>* ... 0x0D
 	;; This is all in one big string, the CR is the EOF mark (spaces not in file).
@@ -922,5 +923,11 @@ a20_ns:
 	int 10h
 	jmp halt_forever
 
+drv_nofile:
+	mov ah, 01h
+	mov dx, missing_drvs
+	int 21h
+	; Skip past driver processing
+	jmp command_prompt
 ; At current test build, we have 1429 bytes.
 times 1536-($-$$) db 00h

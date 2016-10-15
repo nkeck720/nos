@@ -170,6 +170,10 @@ find_files_loop:
 	mov ah, byte ptr es:bx
 	cmp ah, 80h
 	je  found_field
+	; If there is a null here, then we are in empty spce of the FSB.
+	; Exit just in case.
+	cmp ah, 00h
+	je  disk_error
 	inc bx
 	jmp find_files_loop
 disk_error:
