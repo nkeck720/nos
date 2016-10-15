@@ -276,6 +276,8 @@ get_char_loop:
 	; Otherwise copy the char and begin again
 	mov [ds:si], al
 	inc si
+	mov ah, 0Eh
+	int 10h
 	jmp get_char_loop
 get_string_done:
 	; Place our NULL and exit

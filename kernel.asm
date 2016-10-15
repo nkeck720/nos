@@ -26,15 +26,15 @@
 	boot_drv db 00h 						    ; For saving tho boot drive
 	old_ss dw 0000h 						    ; For saving our old SS locations.
 	old_sp dw 0000h 						    ; Same for old SP.
-	version db "NOS version 2.0 -- built from Git repository", 0Dh, 00h ; Version string
-	bootmsg db "Booting up...", 0Dh, 00h				    ; Boot message
+	version db "NOS Beta 1 -- built from Git repository", 0Dh, 00h ; Version string
+	bootmsg db "Booting up...", 0Dh, 0Ah, 00h				    ; Boot message
 	drv_fname db "DRVS", 00h					    ; Driver list file name
-	blank_line db 0Dh, 00h						    ; A blank line on the screen
+	blank_line db 0Dh, 0Ah, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
-	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
+	bad_command db "That command doesn't exist.", 0Dh, 0Ah, 00h		    ; Bad command message
 	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
 	old_dx dw 0000h 						    ; For loading segmented stuff
-	missing_drvs db "No DRVS file present, skipping", 0Dh, 00h
+	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -342,7 +342,7 @@ command_prompt:
 	mov dx, prompt
 	int 21h
 	mov ah, 06h
-	push ds	; Save original DS again
+	push ds ; Save original DS again
 	push bx
 	mov bx, 0FFFFh		; HMA
 	mov ds, bx		; The command line space as shown in the memory model
