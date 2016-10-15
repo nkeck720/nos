@@ -34,6 +34,7 @@
 	bad_command db "That command doesn't exist.", 0Dh, 00h		    ; Bad command message
 	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
 	old_dx dw 0000h 						    ; For loading segmented stuff
+	missing_drvs db "No DRVS file present, skipping", 0Dh, 00h
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -341,9 +342,11 @@ command_prompt:
 	mov dx, prompt
 	int 21h
 	mov ah, 06h
-	push ds 		; Save original DS again
-	mov ax, 0FFFFh		; HMA
-	mov ds, ax		; The command line space as shown in the memory model
+	push ds	; Save original DS again
+	push bx
+	mov bx, 0FFFFh		; HMA
+	mov ds, bx		; The command line space as shown in the memory model
+	pop bx
 	mov dx, 0010h
 	int 21h
 	;; Now, we switch back to the original DS and parse the command.
