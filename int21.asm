@@ -243,8 +243,8 @@ not_right_file:
 	cmp ah, 80h
 	jne not_right_file
 	; Back to 0x80. Go to byte after 0xff
-go_to_end:
 	mov cx, 14d
+go_to_end:
 	inc bx
 	loop go_to_end
 	; Go back to check loop
