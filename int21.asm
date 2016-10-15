@@ -170,6 +170,8 @@ find_files_loop:
 	mov ah, byte ptr es:bx
 	cmp ah, 80h
 	je  found_field
+	inc bx
+	jmp find_files_loop
 disk_error:
 	; Otherwise we are done here, and have not found our file.
 	pop bx
