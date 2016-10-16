@@ -20,6 +20,14 @@
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
 	db 0FFh 		; End field
-	times 511-($-$$) db 00h
 	db 0FFh
-	
+	; Add in the example flat program here
+	db 08h
+	db 00h, 00h, 08h
+	db 01h
+	db "dir", 00h, "    "
+	db 80h
+	db 0FFh
+
+times 511-($-$$) db 00h
+

@@ -359,15 +359,15 @@ command_prompt:
 	;; String compare function is under development, so for now we want to use
 	;; the individual comparison.
 	mov ah, byte ptr es:bx
-	cmp ah, "C"		; Command line is always in caps
+	cmp ah, "c"		; Command line is always in caps
 	jne external_command
 	inc bx
 	mov ah, byte ptr es:bx
-	cmp ah, "L"
+	cmp ah, "l"
 	jne external_command
 	inc bx
 	mov ah, byte ptr es:bx
-	cmp ah, "S"
+	cmp ah, "s"
 	jne external_command
 	inc bx			; We still have to check for the end of the line
 	mov ah, byte ptr es:bx
