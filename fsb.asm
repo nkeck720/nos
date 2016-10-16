@@ -29,5 +29,5 @@
 	db 80h
 	db 0FFh
 
-times 511-($-$$) db 00h
+times 512-($-$$) db 00h
 
