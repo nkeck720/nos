@@ -247,11 +247,7 @@ not_right_file:
 	cmp ah, 80h
 	jne not_right_file
 	; Back to 0x80. Go to byte after 0xff
-	mov cx, 14d
-go_to_end:
-	inc bx
-	loop go_to_end
-	; Go back to check loop
+	add bx, 13d
 	jmp find_files_loop
 open_file_data:
 	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
