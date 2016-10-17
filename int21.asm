@@ -276,9 +276,19 @@ get_char_loop:
 	int 10h
 	jmp get_char_loop
 get_string_done:
-	; Place our NULL and exit
+	; Place our NULL, print a return, and exit
 	mov byte [ds:si], 00h
 	xor si, si
+	push ax
+	push bx
+	mov ah, 0Eh
+	mov al, 0Dh
+	mov bh, 00h
+	int 10h
+	mov al, 0Ah
+	int 10h
+	pop bx
+	pop ax
 	iret
 nos_version:
 	popf
