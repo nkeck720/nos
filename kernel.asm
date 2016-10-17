@@ -31,7 +31,7 @@
 	drv_fname db "DRVS", 00h					    ; Driver list file name
 	blank_line db 0Dh, 0Ah, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
-	bad_command db "That command doesn't exist.", 0Dh, 0Ah, 00h		    ; Bad command message
+	bad_command db "That command doesn't exist, or cannot be found.", 0Dh, 0Ah, 00h 	    ; Bad command message
 	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
 	old_dx dw 0000h 						    ; For loading segmented stuff
 	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
@@ -492,7 +492,8 @@ external_command:
 	mov bx, 4000h
 	mov es, bx
 	mov bx, 0000h
-	stc		  ; STC indicates the loading of an executable file
+	; Commenting this out for now, as it is not yet implemented.
+	;stc		  ; STC indicates the loading of an executable file
 	int 21h
 	;; Check to make sure the file was loaded. If not, we don't have an executable file
 	;; or the file was not found.

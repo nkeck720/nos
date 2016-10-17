@@ -292,7 +292,7 @@ get_string_done:
 	iret
 nos_version:
 	popf
-	mov cx, "20"
+	mov cx, "0B"
 	iret
 kernel_panic:
 	; Turn on all keylights and Halt
