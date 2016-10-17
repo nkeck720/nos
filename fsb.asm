@@ -6,7 +6,7 @@
 	db 00h
 	db 03h
 	;; Length of kernel in blocks (0FFh here means no kernel on disk)
-	db 03h
+	db 04h
 	;; free blocks
 	dw 2875d
 	;; total blocks
@@ -15,18 +15,11 @@
 
 	;; INT21 must be our first file here. Otherwise the kernel will not boot.
 	db 80h			; Start of field
-	db 00h, 00h, 06h	; CHS of INT21
+	db 00h, 00h, 07h	; CHS of INT21
 	db 02h			; INT21 will be 1024 bytes
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
 	db 0FFh 		; End field
-	db 0FFh
-	; Add in the example flat program here
-	db 08h
-	db 00h, 00h, 08h
-	db 01h
-	db "dir", 00h, "    "
-	db 80h
 	db 0FFh
 
 times 512-($-$$) db 00h
