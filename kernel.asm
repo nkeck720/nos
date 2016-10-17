@@ -35,6 +35,7 @@
 	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
 	old_dx dw 0000h 						    ; For loading segmented stuff
 	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
+	message db "Listing of boot disk:", 0Dh, 0Ah, 00h
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -359,6 +360,8 @@ command_prompt:
 	;; String compare function is under development, so for now we want to use
 	;; the individual comparison.
 	mov ah, byte ptr es:bx
+	cmp ah, "d"
+	je  check_dir
 	cmp ah, "c"		; Command line is always in caps
 	jne external_command
 	inc bx
@@ -382,6 +385,82 @@ command_prompt:
 	mov ah, 00h
 	int 10h
 	;; Now go back to the command prompt.
+	jmp command_prompt
+check_dir:
+	; pointing at "d"
+	inc bx
+	mov ah, byte ptr es:bx
+	cmp ah, "i"
+	jne external_command
+	inc bx
+	mov ah, byte ptr es:bx
+	cmp ah, "r"
+	jne external_command
+	; We have a dir command
+	push cs
+	pop ds
+	mov ah, 01h
+	mov dx, message
+	int 21h
+	; First thing is first: update the FSB.
+	push es
+	mov bx, 1000h
+	mov ds, bx
+	mov ah, 02h
+	mov al, 01d
+	mov ch, 00h
+	mov cl, 02d		; CL=02 is the FSB
+	mov dh, 00h
+	mov dl, byte [boot_drv]
+	mov bx, 2000h		; FSB segment
+	mov es, bx
+	mov bx, 0000h
+	int 13h
+	pop es
+	push cs
+	pop ds
+	; Now we need to begin the process of listing out the files.
+	; Start by pointing ES:BX at the first file field.
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0007h
+list_files_loop:
+	; Now we loop until we find a null, indicating that we have entered empty space.
+	; Find the file fields
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	je  get_file_name_dir
+	; Otherwise, check for null
+	cmp ah, 00h
+	je done
+	; Increment until we find a file
+	inc bx
+	jmp list_files_loop
+get_file_name_dir:
+	; The file name is exactly 5 bytes from the 0x80, add that on
+	add bx, 05d
+	; Now print out the file name on its own
+	push dx
+	push ds
+	mov dx, bx
+	push es
+	pop ds
+	mov ah, 01h
+	int 21h
+	mov ah, 0Eh
+	mov al, 0Dh
+	int 10h
+	mov al, 0Ah
+	int 10h
+	pop ds
+	pop dx
+	; Now go to the end of the field
+	sub bx, 05d
+	add bx, 14d
+	; Continue the loop
+	jmp list_files_loop
+done:
+	; We are done here.
 	jmp command_prompt
 external_command:
 	;; We have a disk-based program to load, so here we want to load that
@@ -932,5 +1011,4 @@ drv_nofile:
 	int 21h
 	; Skip past driver processing
 	jmp command_prompt
-; At current test build, we have 1429 bytes.
-times 1536-($-$$) db 00h
+times 2048-($-$$) db 00h
