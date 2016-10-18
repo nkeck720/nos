@@ -20,7 +20,14 @@
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
 	db 0FFh 		; End field
+	; Example text file for use with type command
+	db 80h
+	db 00h, 00h, 09h
+	db 01h
+	db "text", 00h, "   "
+	db 00h
 	db 0FFh
+	
 
-times 512-($-$$) db 00h
-
+times 511-($-$$) db 00h
+db 0FFh

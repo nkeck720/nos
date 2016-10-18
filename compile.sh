@@ -7,11 +7,12 @@ fasm bootload.asm bootload.bin || exit 1
 fasm fsb.asm fsb.bin || exit 1
 fasm kernel.asm kernel.bin || exit 1
 fasm int21.asm int21.bin || exit 1
+fasm text.asm text.bin || exit 1
 fasm image.asm NOS.img || exit 1
 #
 # Ask the user about the floppy
 #
-echo -e "Do you want me to write out to a floppy (Y/n)? \c"
+echo -e "Compile complete. Do you want me to write out to a floppy (Y/n)? \c"
 read ans
 if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans"="" ]
 then
