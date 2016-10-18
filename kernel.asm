@@ -538,7 +538,7 @@ done_type:
 type_error:
 	; Could not find the file or there was a disk error
 	mov ah, 01h
-	mov dx, error_load_tpye
+	mov dx, error_load_type
 	int 21h
 	jmp command_prompt
 external_command:
