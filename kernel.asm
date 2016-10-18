@@ -36,6 +36,8 @@
 	old_dx dw 0000h 						    ; For loading segmented stuff
 	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
 	message db "Listing of boot disk:", 0Dh, 0Ah, 00h
+	no_name_type db "No filename given, abort.", 0Dh, 0Ah, 00h
+	error_load_type db "Could not find file, abort.", 0Dh, 0Ah, 00h
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -360,9 +362,11 @@ command_prompt:
 	;; String compare function is under development, so for now we want to use
 	;; the individual comparison.
 	mov ah, byte ptr es:bx
+	cmp ah, "t"
+	je  check_type
 	cmp ah, "d"
 	je  check_dir
-	cmp ah, "c"		; Command line is always in caps
+	cmp ah, "c"		
 	jne external_command
 	inc bx
 	mov ah, byte ptr es:bx
@@ -461,6 +465,81 @@ get_file_name_dir:
 	jmp list_files_loop
 done:
 	; We are done here.
+	jmp command_prompt
+check_type:
+	; Check for a type command
+	; pointing at 't'
+	inc bx
+	mov ah, byte ptr es:bx
+	cmp ah, 'y'
+	jne external_command
+	inc bx
+	mov ah, byte ptr es:bx
+	cmp ah, 'p'
+	jne external_command
+	inc bx
+	mov ah, byte ptr es:bx
+	cmp ah, 'e'
+	jne external_command
+	; We do have a type command if we are here. Check if there is a filename
+	inc bx
+	mov ah, byte ptr es:bx
+	cmp ah, 00h
+	je  no_filename_type
+	; Check for a space, and if none then we might have an external command
+	cmp ah, 20h
+	je  type_file
+	; If we are here, we probably have an external command
+	jmp external_command
+no_filename_type:
+	mov ah, 01h
+	mov dx, no_type_name
+	int 21h
+	jmp command_prompt
+type_file:
+	; Pointing at the space. Load up the file after the space
+	inc bx
+	push ds
+	push dx
+	push es
+	pop ds
+	mov dx, bx
+	; Use the program extra to load up to
+	mov bx, 6000h
+	mov es, bx
+	mov bx, 0000h
+	mov ah, 02h
+	int 21h
+	jc  type_error
+	push ds
+	pop es
+	pop dx
+	pop ds
+	; Now loop through the entire file
+	; We don't need to address the command line anymore, so use
+	; ES:BX to point to the file we loaded up
+	; 0xFF is an EOF mark
+	mov bx, 6000h
+	mov es, bx
+	mov bx, 0000h
+type_file_loop:
+	mov ah, 0Eh
+	mov al, byte ptr es:bx
+	cmp al, 0FFh
+	je  done_type
+	; otherwise, print the char and continue the loop
+	mov bh, 00h
+	int 10h
+	inc bx
+	jmp type_file_loop
+done_type:
+	; We are done here.
+	jmp command_prompt
+type_error:
+	; Could not find the file or there was a disk error
+	mov ah, 01h
+	mov dx, error_load_tpye
+	int 21h
 	jmp command_prompt
 external_command:
 	;; We have a disk-based program to load, so here we want to load that
