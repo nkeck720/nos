@@ -36,7 +36,7 @@
 	old_dx dw 0000h 						    ; For loading segmented stuff
 	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
 	message db "Listing of boot disk:", 0Dh, 0Ah, 00h
-	no_name_type db "No filename given, abort.", 0Dh, 0Ah, 00h
+	no_type_name db "No filename given, abort.", 0Dh, 0Ah, 00h
 	error_load_type db "Could not find file, abort.", 0Dh, 0Ah, 00h
 start:
 	pop dx			; Get our boot drive
