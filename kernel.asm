@@ -403,9 +403,12 @@ check_dir:
 	; We have a dir command
 	push cs
 	pop ds
+	; Save BX to avoid corruption.
+	push bx
 	mov ah, 01h
 	mov dx, message
 	int 21h
+	pop bx
 	; First thing is first: update the FSB.
 	push es
 	mov bx, 1000h
@@ -449,6 +452,7 @@ get_file_name_dir:
 	mov dx, bx
 	push es
 	pop ds
+	push bx
 	mov ah, 01h
 	int 21h
 	mov ah, 0Eh
@@ -456,6 +460,7 @@ get_file_name_dir:
 	int 10h
 	mov al, 0Ah
 	int 10h
+	pop bx
 	pop ds
 	pop dx
 	; Now go to the end of the field
