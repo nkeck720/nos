@@ -543,6 +543,9 @@ done_type:
 	jmp command_prompt
 type_error:
 	; Could not find the file or there was a disk error
+	pop ax
+	pop ax
+	pop ax
 	mov ah, 01h
 	mov dx, error_load_type
 	int 21h
