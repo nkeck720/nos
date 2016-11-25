@@ -1100,7 +1100,7 @@ try_fast_a20:
 	out 0x92, al
 	after:
 	; Test to see if that worked
-	call check_A20
+	call check_a20
 	cmp ax, 0
 	je  a20_failed
 a20_keyb:
