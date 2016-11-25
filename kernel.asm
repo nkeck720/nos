@@ -1055,6 +1055,10 @@ halt_forever:
 	jmp halt_forever
 a20_line_ena:
 	; NOTE: Credit for all A20 code goes to the OSDev wiki.
+	; First go ahead and check if the A20 line is already activated
+	call check_a20
+	cmp ax, 1
+	je  a20_activated
 	; Enable the high memory area.
 	mov	ax,2403h		;--- A20-Gate Support ---
 	int	15h
@@ -1086,9 +1090,25 @@ a20_ns:
 	; Check to make sure it is enabled
 	call check_a20
 	cmp ax, 0
-	je  a20_failed
+	je  try_fast_a20
+a20_success:
 	; Enabled successfully.
 	ret 
+try_fast_a20:
+	; Attempt to use FAST A20 to enable the A20 line.
+	in al, 0x92
+	test al, 2
+	jnz after
+	or al, 2
+	and al, 0xFE
+	out 0x92, al
+	after:
+	; Test to see if that worked
+	call check_a20
+	cmp ax, 0
+	je  a20_failed
+	; If we are here, we have it activated.
+	ret
 a20_keyb:
 	cli
  
