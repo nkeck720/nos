@@ -129,28 +129,16 @@ open_file:
 	push bx
 	; Read through DS:DX to find the filename
 	mov si, dx
-	; AH is pointer to filename char
-	xor ah, ah
+	; DI is pointer to filename char
+	xor di, di
+	mov di, filename
 open_filename_loop:
 	mov al, byte ptr ds:si
 	; Check for null
 	cmp al, 00h
 	je  done_open_filename_loop
-	; AH=pointer, AL=byte
-	mov bx, filename    ; Address of filename, in data area below
-	push bx
-	push ax
-	xor al, al
-	mov al, ah
-	xor ah, ah
-	; AX=00<ptr byte>h
-	add ax, bx
-	mov bx, ax
-	;BL=ptr byte
-	pop ax
-	mov byte ptr cs:bx, al
-	mov ah, bl
-	pop bx
+	mov [cs:di], al
+	inc di
 	inc si
 	jmp open_filename_loop
 done_open_filename_loop:
