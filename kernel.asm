@@ -535,7 +535,7 @@ type_file_loop:
 	je  done_type
 	; otherwise, print the char and continue the loop
 	push bx
-	mov bh, 00h
+	mov bl, 00h
 	int 10h
 	pop bx
 	inc bx
