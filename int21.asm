@@ -238,8 +238,16 @@ go_back_to_80:
 	mov ah, 02h
 	int 13h
 	jc  disk_error
-	; Move the blocks into AL and quit
+	; Move the blocks into AL
 	mov al, byte ptr cs:blocks
+	; Return filesystem string to expected values
+	mov cx, 08d
+	mov bx, filename
+clear_data_loop_open:
+	mov si, cx
+	mov byte ptr cs:bx+si, 00h
+	loop clear_data_loop_open
+	; We are finished, quit
 	iret
 not_right_file:
 	; Somewhere in the filename. Go back to the beginning of the field
