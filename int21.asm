@@ -104,6 +104,15 @@ print_done:
 	iret
 open_file:
 	popf
+	push es
+	push bx
+	; Place the address to load up to in RAM
+	mov word ptr cs:loadto_off, bx
+	push es
+	pop bx
+	mov word ptr cs:loadto_seg, bx
+	pop bx
+	pop es
 	pusha
 	; Load up the FSB
 	mov ah, 02h
@@ -129,28 +138,16 @@ open_file:
 	push bx
 	; Read through DS:DX to find the filename
 	mov si, dx
-	; AH is pointer to filename char
-	xor ah, ah
+	; DI is pointer to filename char
+	xor di, di
+	mov di, filename
 open_filename_loop:
 	mov al, byte ptr ds:si
 	; Check for null
 	cmp al, 00h
 	je  done_open_filename_loop
-	; AH=pointer, AL=byte
-	mov bx, filename    ; Address of filename, in data area below
-	push bx
-	push ax
-	xor al, al
-	mov al, ah
-	xor ah, ah
-	; AX=00<ptr byte>h
-	add ax, bx
-	mov bx, ax
-	;BL=ptr byte
-	pop ax
-	mov byte ptr cs:bx, al
-	mov ah, bl
-	pop bx
+	mov [cs:di], al
+	inc di
 	inc si
 	jmp open_filename_loop
 done_open_filename_loop:
@@ -234,6 +231,10 @@ go_back_to_80:
 	pop ds
 	pop es
 	pop bx
+	; Get the address
+	mov bx, word ptr cs:loadto_seg
+	mov es, bx
+	mov bx, word ptr cs:loadto_off
 	mov ah, 02h
 	int 13h
 	jc  disk_error
@@ -247,11 +248,13 @@ not_right_file:
 	cmp ah, 80h
 	jne not_right_file
 	; Back to 0x80. Go to byte after 0xff
-	add bx, 13d
+	add bx, 14d
 	jmp find_files_loop
 open_file_data:
 	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
 	blocks	 db 00h 					; For the number of blocks later
+	loadto_seg dw 0000h					; For the segment to load the file to
+	loadto_off dw 0000h					; For the offset to load the file to
 	
 close_file:
 	; Empty for the sake of a test build
