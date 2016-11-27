@@ -104,6 +104,15 @@ print_done:
 	iret
 open_file:
 	popf
+	push es
+	push bx
+	; Place the address to load up to in RAM
+	mov word ptr cs:loadto_off, bx
+	push es
+	pop bx
+	mov word ptr cs:loadto_seg, bx
+	pop bx
+	pop es
 	pusha
 	; Load up the FSB
 	mov ah, 02h
@@ -222,6 +231,10 @@ go_back_to_80:
 	pop ds
 	pop es
 	pop bx
+	; Get the address
+	mov bx, word ptr cs:loadto_seg
+	mov es, bx
+	mov bx, word ptr cs:loadto_off
 	mov ah, 02h
 	int 13h
 	jc  disk_error
@@ -240,6 +253,8 @@ not_right_file:
 open_file_data:
 	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
 	blocks	 db 00h 					; For the number of blocks later
+	loadto_seg dw 0000h					; For the segment to load the file to
+	loadto_off dw 0000h					; For the offset to load the file to
 	
 close_file:
 	; Empty for the sake of a test build
