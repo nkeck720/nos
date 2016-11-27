@@ -534,10 +534,7 @@ type_file_loop:
 	cmp al, 0FFh
 	je  done_type
 	; otherwise, print the char and continue the loop
-	push bx
-	mov bl, 00h
 	int 10h
-	pop bx
 	inc bx
 	jmp type_file_loop
 done_type:
