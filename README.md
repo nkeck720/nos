@@ -11,7 +11,7 @@ In Unix/Linux/BSD, make sure you have fasm in your $PATH. Once you have done tha
 
 # Questions?
 
-If you have any questions, you can email me at nos.suppt@gmail.com. If you find bugs or wish to contribute, feel free to submit an issue at Github (nkeck720/nos) or create a pull request. I always accept any help I can get.
+If you have any questions, you can email me at nos.suppt@gmail.com. Your email gets sent to a real person and not a bot, and so I will always be able to respond to your individual situation.
 
 # Legal agreement
 
