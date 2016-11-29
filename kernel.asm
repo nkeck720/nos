@@ -580,7 +580,7 @@ external_command:
 	mov es, bx
 	mov bx, 0000h
 	; Commenting this out for now, as it is not yet implemented.
-	;stc		  ; STC indicates the loading of an executable file
+	stc		  ; STC indicates the loading of an executable file
 	int 21h
 	;; Check to make sure the file was loaded. If not, we don't have an executable file
 	;; or the file was not found.
