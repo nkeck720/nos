@@ -104,6 +104,18 @@ print_done:
 	iret
 open_file:
 	popf
+	mov exec_check, 00h
+	; Check to see if we are loading an executable file
+	mov ah, byte [esp+4]
+	and ah, 1
+	cmp ah, 1
+	; If so set the exec flag
+	jne start_open_file
+	mov exec_check, 80h
+	; clear carry
+	clc
+	and [esp+4], -2
+start_open_file:
 	push es
 	push bx
 	; Place the address to load up to in RAM
@@ -205,6 +217,9 @@ check_end_filename:
 	; to load it up.
 	cmp ah, al
 	jne not_right_file
+	; Check if the file we are looking for is an executable file
+	cmp exec_check, 80h
+	je  check_for_exec
 	; We have a correct filename. Load it up, point at beginning of file field.
 go_back_to_80:
 	dec bx
@@ -258,11 +273,25 @@ not_right_file:
 	; Back to 0x80. Go to byte after 0xff
 	add bx, 14d
 	jmp find_files_loop
+check_for_exec:
+	; Pointing at the end of the file name
+	; Point to the exec flag (13 bytes in)
+	dec bx
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	jne check_for_exec
+	add bx, 13d
+	cmp byte ptr es:bx, 80h
+	jne not_right_file
+	; We have a correct file name.
+	jmp go_back_to_80
 open_file_data:
 	filename db 00h,00h,00h,00h,00h,00h,00h,00h		; 8 bytes for file name
 	blocks	 db 00h 					; For the number of blocks later
 	loadto_seg dw 0000h					; For the segment to load the file to
 	loadto_off dw 0000h					; For the offset to load the file to
+	exec_check db 00h					; For the executable check flag
+	scratch	   db 00h					; For random stuff
 	
 close_file:
 	; Empty for the sake of a test build
