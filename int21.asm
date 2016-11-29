@@ -104,17 +104,17 @@ print_done:
 	iret
 open_file:
 	popf
-	mov exec_check, 00h
+	mov byte ptr exec_check, 00h
 	; Check to see if we are loading an executable file
 	mov ah, byte [esp+4]
 	and ah, 1
 	cmp ah, 1
 	; If so set the exec flag
 	jne start_open_file
-	mov exec_check, 80h
+	mov byte ptr exec_check, 80h
 	; clear carry
 	clc
-	and [esp+4], -2
+	and byte [esp+4], -2
 start_open_file:
 	push es
 	push bx
@@ -218,7 +218,7 @@ check_end_filename:
 	cmp ah, al
 	jne not_right_file
 	; Check if the file we are looking for is an executable file
-	cmp exec_check, 80h
+	cmp byte ptr exec_check, 80h
 	je  check_for_exec
 	; We have a correct filename. Load it up, point at beginning of file field.
 go_back_to_80:
@@ -291,7 +291,7 @@ open_file_data:
 	loadto_seg dw 0000h					; For the segment to load the file to
 	loadto_off dw 0000h					; For the offset to load the file to
 	exec_check db 00h					; For the executable check flag
-	scratch	   db 00h					; For random stuff
+	scratch    db 00h					; For random stuff
 	
 close_file:
 	; Empty for the sake of a test build
