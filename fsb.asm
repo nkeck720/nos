@@ -27,6 +27,14 @@
 	db "text", 00h, "   "
 	db 00h
 	db 0FFh
+	; Example program
+	db 80h
+	db 00h, 00h, 0Ah
+	db 01h
+	db "hello", 00h, "  "
+	db 80h
+	db 0FFh
+	
 	
 
 times 511-($-$$) db 00h
