@@ -15,7 +15,8 @@
 	;;	   BH describes the error when CF is set.
 	;; AH=03h: Close a file. DS:DX points to the null-terminated file name, ES:BX points to the file
 	;;	   contents. Returns nothing on no error, if an error occurs then CF is set and BH describes 
-	;;     the error.
+	;;     the error. If CF is set on entry, then will save as executable and will look for EOF marks
+	;;     ("EF", 0xFF for flat; "ES", 0xFF for segmented)
 	;; AH=04h: Gets the NOS version and places two ASCII characters into CX. (e.g. CX="20", NOS 2.0)
 	;;	   Minor version number is placed in AL (e.g. Rev 3, AL="3")
 	;; AH=05h: No function is here yet, this will just IRET until something gets placed here.
@@ -71,12 +72,14 @@ main_func_check:
 	; Set carry
 	or byte [esp+4], 1
 	iret
+	
 install_check:
 	;; This is a simple install check function.
 	;; Doesn't take any args, and just returns AX=0x5555
 	popf			; Required of all functions, to keep stack clean
 	mov ax, 5555h
 	iret
+	
 	; This code snippet is provided by SeproMan on the FASM board.
 	; Thanks Sepro! :D
 print_string:
@@ -102,6 +105,7 @@ print_done:
 	pop cx 
 	pop ax 
 	iret
+	
 open_file:
 	popf
 	mov byte ptr exec_check, 00h
@@ -298,8 +302,163 @@ close_file:
 	; To begin saving a file, we need to see if we are saving an executable file or not.
 	; If so, we need to check for a specific sequence of characters rather than just the
 	; 0xFF EOF character to avoid truncating code.
-	
+	; File is in ES:BX, name in DS:DX
+	jc  save_as_exec
+	; Otherwise, we will save as a normal file.
+	; First we need to see if the file exists. We will use the empty space in the INT21
+	; segment for this purpose.
+	push es
+	push bx
+	push cs
+	pop es
+	mov bx, out_in_space
+	mov ah, 02h
+	int 21h
+	; If the file exists, then all we need to do is check the length of the file to see
+	; if we need to allocate more space in the FSB for it.
+	; If it doesn't, then we need to create a new FSB entry for it.
+	jc  save_does_not_exist
+	; It does exist. Check the length of the file here.
+	mov cx, 0000h
+	push bx
+check_length:
+	inc cx
+	mov al, byte ptr es:bx
+	cmp al, 0FFh
+	je  done_check_length
+	; Not done, so inc to next byte and check again
+	inc bx
+	jmp check_length
+done_check_length:
+	; Divide the number of bytes counted by 512 to get the total number of blocks
+	push dx
+	mov ax, cx
+	mov cx, 0200h					; 512 decimal
+	div cx
+	; Check to see if there is a remainder, and if so then add a block to the result
+	cmp dx, 0000h
+	je  get_field_save
+	inc ax
+	; Save the count in CX
+	mov cx, ax
+get_field_save:
+	; Now we need to find the file field for the file and check to see if we need to
+	; allocate more space.
+	pop dx
+	push es
+	push bx
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0008h
+look_for_file_save:
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	je  found_field_save
+	pop dx
+	pop si
+	cmp ah, 00h
+	je  disk_error_save
+	push si
+	push dx
+	inc bx
+	jmp look_for_file_save
+found_field_save:
+	; Check to see if it is indeed our file.
+	; Pointing at 0x80
+	push bx
+	add bx, 05d
+	mov si, dx
+	push si
+compare_filename_save:
+	mov ah, byte ptr es:bx
+	cmp ah, byte ptr ds:si
+	jne not_right_file_save
+	; Check for the end of the filename
+	cmp ah, 00h
+	je  found_file_save
+	; Otherwise keep going
+	inc bx
+	inc si
+	jmp compare_filename_save
+not_right_file_save:
+	pop si
+	; Go back to the 0x80
+	pop bx
+	; Now to the next field
+	add bx, 14d
+	jmp look_for_file_save
+found_file_save:
+	; We have our file. Go back to the 0x80 and look at the length in blocks.
+	pop si
+	pop bx
+	add bx, 04d				; Pointing at length
+	mov ah, cl				; FSB limitation: can't save more than 255 blocks at once
+	mov al, byte ptr es:bx
+	cmp ah, al
+	jg  allocate_more_space_save
+	; If we have something that is less than the curently allocated space, we will leave it there just to
+	; keep things simple
+	jmp save_file
+allocate_more_space_save:
+	; Currently not implemented
+	pop ax
+	pop ax
+	mov ah, 01h
+	push ds
+	push cs
+	pop ds
+	mov dx, allocate_ns
+	int 21h
+	pop ds
 	iret
+	allocate_ns db "WARN: Extra space allocation is currently not implemented in INT21!", 0Dh, 0Ah, 00h
+save_file:
+	; We have length in cl, move it to al
+	mov al, cl
+	mov ah, 03h
+	; Get the CHS information
+	sub bx, 03h
+	mov ch, byte ptr es:bx
+	inc bx
+	mov dh, byte ptr es:bx
+	inc bx
+	mov cl, byte ptr es:bx
+	pop bx
+	pop es
+	; Get boot drive from kernel
+	push ds
+	push si
+	mov si, 1000h
+	mov ds, si
+	mov dl, byte ptr 0003h
+	pop si
+	pop ds
+	int 13h
+	jc  disk_error_save
+	; We are successful! Return here.
+	iret
+save_as_exec:
+	; Currently not implemented
+	mov ah, 01h
+	push cs
+	pop ds
+	mov dx, save_as_exec_ns
+	int 21h
+	iret
+	save_as_exec_ns db "WARN: Saving as executable currently not implemented!", 0Dh, 0Ah, 00h
+disk_error_save:
+	or byte [esp+4], 1
+	iret
+save_does_not_exist:
+	; Curently not implmented
+	push cs
+	pop ds
+	mov ah, 01h
+	mov dx, create_entry_ns
+	int 21h
+	iret
+	create_entry_ns db "WARN: Creating new files is not yet supported!", 0Dh, 0Ah, 00h
+	
 get_user_string:
 	popf
 	; Args:
@@ -348,4 +507,6 @@ kernel_panic:
 	cli
 	hlt
 	jmp kernel_panic
+out_in_space:
+
 times 1024-($-$$) db 00h
