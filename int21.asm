@@ -14,8 +14,8 @@
 	;;	   of the file to ES:BX. Returns number of blocks read in AL, CF is set on an error, and
 	;;	   BH describes the error when CF is set.
 	;; AH=03h: Close a file. DS:DX points to the null-terminated file name, ES:BX points to the file
-	;;	   contents, and AH contains the number of blocks to be written. Returns nothing on no error,
-	;;	   if an error occurs then CF is set and BH describes the error.
+	;;	   contents. Returns nothing on no error, if an error occurs then CF is set and BH describes 
+	;;     the error.
 	;; AH=04h: Gets the NOS version and places two ASCII characters into CX. (e.g. CX="20", NOS 2.0)
 	;;	   Minor version number is placed in AL (e.g. Rev 3, AL="3")
 	;; AH=05h: No function is here yet, this will just IRET until something gets placed here.
@@ -294,8 +294,11 @@ open_file_data:
 	scratch    db 00h					; For random stuff
 	
 close_file:
-	; Empty for the sake of a test build
 	popf
+	; To begin saving a file, we need to see if we are saving an executable file or not.
+	; If so, we need to check for a specific sequence of characters rather than just the
+	; 0xFF EOF character to avoid truncating code.
+	
 	iret
 get_user_string:
 	popf
@@ -333,6 +336,7 @@ get_string_done:
 nos_version:
 	popf
 	mov cx, "B3"
+	mov al, "0"
 	iret
 kernel_panic:
 	; Turn on all keylights and Halt
