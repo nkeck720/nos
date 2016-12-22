@@ -616,7 +616,7 @@ run_flat_prog:
 	;; "F" (0x46) indicates flat program
 	;; [up to 64k-1 byte of code and data]
 	;; "EF" (byte order 0x4546)
-	;; 0xFF signature
+	;; 0xFF signature (EOF)
 	;;
 	;; This structure needs to be tested. If we never find the "EF" or the 0xFF, then we
 	;; have a bad program. We also need to make sure that the code fits one segment.
