@@ -589,7 +589,7 @@ done_last_file:
 	; What we have now is the last file on disk's CHS stored in RAM.
 	; We need to save the file one sector after this one.
 	;; NOTE: FOR NOW WE WILL ASSUME THE BOOT DISK IS A FLOPPY. I AM AWARE THAT THIS IS NOT A GOOD PRACTICE.
-	;;       PROPER HARD DISK SUPPORT WILL BE IMPLEMENTED AT A LATER DATE.
+	;;	 PROPER HARD DISK SUPPORT WILL BE IMPLEMENTED AT A LATER DATE.
 	pop bx
 	pop es
 	; To increment the value, we need to check to make sure that the CHS values stay within their limits.
@@ -625,9 +625,140 @@ disk_full:
 	jmp disk_error_save
 	disk_full_msg db "ERR: Attempted to save to a disk that has no space for the file.", 0Dh, 0Ah, 00h
 create_new_field:
-	
-	
+	; We have the needed CHS info to create a new field. All we need to do now is get the length of the file
+	; by looping through it until we hit an EOF.
+	call get_file_length_save
+	; Run through all of the file fields until we reach null space
+	push es
+	push bx
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0008h
+find_null_space:
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	je  skip_field
+	cmp ah, 00h
+	je  in_null_space
+	inc bx
+	jmp find_null_space
+skip_field:
+	add bx, 14d
+	jmp find_null_space
+in_null_space:
+	; We should be just pointing at the first null.
+	mov byte ptr es:bx, 80h
+	; Add the CHS values
+	inc bx
+	xor si, si
+	mov ah, byte [last_file_chs+si]
+	mov byte ptr es:bx, ah
+	inc bx
+	inc si
+	mov ah, byte [last_file_chs+si]
+	mov byte ptr es:bx, ah
+	inc bx
+	inc si
+	mov ah, byte [last_file_chs+si]
+	mov byte ptr es:bx, ah
+	inc bx
+	mov si, bx
+	push es
+	pop gs
+	; Now the length
+	mov ah, byte ptr length_save
+	mov byte ptr es:bx, ah
+	pop bx
+	pop es
+	pop ds
+	push es
+	push bx
+	push gs
+	pop es
+	mov bx, si
+	; Now put the filename in there
+	mov cl, 08d
+	xor ch, ch
+	mov si, dx
+add_filename:
+	mov ah, byte ptr ds:si
+	dec cl
+	; Check to see if the char is a null
+	cmp ah, 00h
+	je  pad_filename
+	; Otherwise we need to put the char and continue
+	mov byte ptr es:bx, ah
+	inc bx
+	inc si
+	jmp add_filename
+pad_filename:
+	inc bx
+	mov byte ptr es:bx, 20h
+	loop pad_filename
+	; Now we need to write the EXE flag and end byte
+	inc bx
+	mov byte ptr es:bx, 00h
+	mov byte ptr es:bx, 0FFh
+	; Now write the FSB to disk
+	mov ah, 03h
+	mov al, 01h
+	mov ch, 00h
+	mov dh, 00h
+	mov cl, 02h
+	push ds
+	mov bx, 1000h
+	mov ds, bx
+	mov dl, byte ptr ds:0003h
+	pop ds
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0000h
+	int 13h
+	jc  disk_error_save
+	; Now write the actual file to disk
+	mov ah, 03h
+	push cs
+	pop ds
+	mov al, byte ptr length_save
+	mov si, 0000h
+	mov ch, byte [last_file_chs+si]
+	inc si
+	mov dh, byte [last_file_chs+si]
+	inc si
+	mov cl, byte [last_file_chs+si]
+	push ds
+	mov bx, 1000h
+	mov ds, bx
+	mov dl, byte ptr ds:0003h
+	pop ds
+	pop bx
+	pop es
+	int 13h
+	jc  disk_error_save
+	; We are done.
+	iret
+get_file_length_save:
+	pusha
+	mov cx, 0000h
+get_file_length_loop:
+	mov ah, byte ptr es:bx
+	inc cx
+	cmp ah, 0FFh
+	jne get_file_length_loop
+	; Got our length in bytes, now divide it down
+	xor dx, dx
+	mov ax, cx
+	mov cx, 0200h
+	div cx
+	cmp dx, 0000h
+	je  got_file_length_save
+	inc ax
+got_file_length_save:
+	mov byte ptr length_save, al
+	popa
+	ret
 	last_file_chs db 00h,00h,00h
+	length_save db 00h
 	
 get_user_string:
 	popf
@@ -679,4 +810,4 @@ kernel_panic:
 	jmp kernel_panic
 out_in_space:
 
-times 1024-($-$$) db 00h
+times 1536-($-$$) db 00h
