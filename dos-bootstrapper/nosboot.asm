@@ -40,7 +40,8 @@ start:
 	mov es, bx
 	mov bx, 7C00h
 	int 13h
-	mov word ptr es:7DFEh, ax
+	jc  boot_error
+	mov ax, word ptr 0000h:7DFEh
 	cmp ax, word 0AA55h
 	jne boot_error
 	; Make sure that the three bytes preceeding that say "NOS"
