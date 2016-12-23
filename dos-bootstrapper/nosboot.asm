@@ -1,20 +1,14 @@
-	org 100h
+	format MZ
+	entry main:start
 	;
-	; NOSBOOT.ASM - This DOS program is a simple .COM program that is designed to load NOS
+	; NOSBOOT.ASM - This DOS program is a simple program that is designed to load NOS
 	; into a specific place and boot it up, replacing the DOS interface with NOS.
 	; Use wisely - running this program in certain environments can cause instability.
 	;
-	jmp start
-	; This will be our data area
-	version db "NOS Bootstrapper version 1.00.", 0Dh, 0Ah, "$"
-	notice db "This software is distributed with NOS and falls under", 0Dh, 0Ah
-		   db "the same liscense (GNU GPL v2). Please see the GitHub", 0Dh, 0Ah
-		   db "page for more information.$"
-	insert db "Insert your NOS disk in drive A:. Then press return.", 0Dh, 0Ah, "$"
-	errors db "OOPS! Something went wrong. Make sure you are using your NOS disk.", 0Dh, 0Ah, "$"
-	
+
+segment main	
 start:
-	push cs
+	push text
 	pop ds
 	mov ah, 09h
 	mov dx, version
@@ -41,7 +35,7 @@ start:
 	mov bx, 7C00h
 	int 13h
 	jc  boot_error
-	mov ax, word ptr 0000h:7DFEh
+	mov ax, word ptr es:7DFEh
 	cmp ax, word 0AA55h
 	jne boot_error
 	; Make sure that the three bytes preceeding that say "NOS"
@@ -61,4 +55,12 @@ boot_error:
 	mov dx, errors
 	int 21h
 	int 20h
-	
+
+segment text
+	; This will be our data area
+	version db "NOS Bootstrapper version 1.10.", 0Dh, 0Ah, "$"
+	notice db "This software is distributed with NOS and falls under", 0Dh, 0Ah
+		   db "the same liscense (GNU GPL v2). Please see the GitHub", 0Dh, 0Ah
+		   db "page for more information.", 0Dh, 0Ah, "$"
+	insert db "Insert your NOS disk in drive A:. Then press return.", 0Dh, 0Ah, "$"
+	errors db "OOPS! Something went wrong. Make sure you are using your NOS disk.", 0Dh, 0Ah, "$"
