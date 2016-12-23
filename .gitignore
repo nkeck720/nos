@@ -18,3 +18,7 @@ a.out		# This will ignore my patches' binaries.
 *.tar
 *.gz
 *~		# Those darned scratch files EMACS keeps leaving around!
+
+# DOS binaries from the bootstrapper
+*.com
+*.exe

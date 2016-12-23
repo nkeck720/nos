@@ -116,5 +116,6 @@ reset_err:
 
 ;---------------------------------------- 
 ; Fit this in the MBR and add boot signature
-times 510-($-$$) db 0
+times 507-($-$$) db 0
+db "NOS"
 dw 0xAA55
