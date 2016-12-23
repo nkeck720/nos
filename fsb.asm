@@ -16,20 +16,20 @@
 	;; INT21 must be our first file here. Otherwise the kernel will not boot.
 	db 80h			; Start of field
 	db 00h, 00h, 07h	; CHS of INT21
-	db 02h			; INT21 will be 1024 bytes
+	db 03h			; INT21 will be 1536 bytes
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
 	db 0FFh 		; End field
 	; Example text file for use with type command
 	db 80h
-	db 00h, 00h, 09h
+	db 00h, 00h, 0Ah
 	db 01h
 	db "text", 00h, "   "
 	db 00h
 	db 0FFh
 	; Example program
 	db 80h
-	db 00h, 00h, 0Ah
+	db 00h, 00h, 0Bh
 	db 01h
 	db "hello", 00h, "  "
 	db 80h

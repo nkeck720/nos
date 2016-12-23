@@ -299,6 +299,26 @@ open_file_data:
 	
 close_file:
 	popf
+	; First thing first, update the FSB.
+	pusha
+	mov ah, 02h
+	mov al, 01h
+	mov ch, 00h
+	mov dh, 00h
+	mov cl, 02h
+	push ds
+	push ax
+	mov ax, 1000h
+	mov ds, ax
+	pop ax
+	mov dl, ptr ds:0003h
+	pop ds
+	mov bx, 2000h
+	mov es, bx
+	xor bx, bx
+	int 13h
+	jc  disk_error_save
+	popa
 	; To begin saving a file, we need to see if we are saving an executable file or not.
 	; If so, we need to check for a specific sequence of characters rather than just the
 	; 0xFF EOF character to avoid truncating code.
@@ -450,14 +470,295 @@ disk_error_save:
 	or byte [esp+4], 1
 	iret
 save_does_not_exist:
-	; Curently not implmented
+	; First, we need to find the last used sector on the disk.
+	; We will do this by incrementing through the FSB fields until we
+	; find something that is the last physical file on the disk. We will
+	; then save the file there.
+	push ds
+	push es
+	push bx
 	push cs
 	pop ds
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0008h
+last_file_loop:
+	; Find a 0x80
+	mov ah, byte ptr es:bx
+	; If we have a null, we are out in spcae after the file fields
+	cmp ah, 00h
+	je done_last_file
+	; If we have a 0x80, then we need to go on out to the CHS and figure out
+	; if it is further out on the disk than the last recorded value
+	cmp ah, 80h
+	je  found_field_last
+	; Otherwise increment and continue looking
+	inc bx
+	jmp last_file_loop
+found_field_last:
+	; First thing to look at is the cylinder (track) value.
+	; Pointing at 0x80
+	inc bx
+	mov si, 0000h
+	mov ah, byte ptr es:bx
+	mov al, byte ptr last_file_chs
+	cmp ah, al
+	; If they are equal then move on to the head value, otherwise we should
+	; check to see if it is greater. If so, then this file is further out than
+	; our current recorded value.
+	je  check_field_head
+	; If less than then this file is further inward, so ignore
+	jl  not_outward_save
+	; It is greater than. Value for C is in AH.
+	mov byte ptr last_file_chs, ah
+	inc si
+	inc bx
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	xor si, si
+	; Now we need to go to the end of the field and keep looking.
+	add bx, 10d
+	jmp last_file_loop
+check_field_head:
+	; Pointing at the cylinder value
+	inc bx
+	inc si
+	mov ah, byte ptr es:bx
+	mov al, byte [last_file_chs+si]
+	cmp ah, al
+	je  check_field_sector
+	jl  not_outward_save
+	; Otherwise, decrement and move the values in
+	dec bx
+	dec si
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	add bx, 10d
+	jmp last_file_loop
+check_field_sector:
+	inc bx
+	inc si
+	mov ah, byte ptr es:bx
+	mov al, byte [last_file_chs+si]
+	cmp ah, al
+	jl  not_outward_save
+	; IF they are equal then there is an error somewhere in the form of a duplicate
+	; file field.
+	je  disk_error_save
+	sub bx, 02d
+	sub si, 02d
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	mov ah, byte ptr es:bx
+	mov byte [last_file_chs+si], ah
+	inc si
+	inc bx
+	add bx, 10d
+	jmp last_file_loop
+not_outward_save:
+	; If we are here then this field is closer to the beginning of the disk.
+	; We need to go to the end of the field.
+	dec bx
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	jne not_outward_save
+	add bx, 14d
+	; Now back to the top of the loop
+	jmp last_file_loop
+done_last_file:
+	; What we have now is the last file on disk's CHS stored in RAM.
+	; We need to save the file one sector after this one.
+	;; NOTE: FOR NOW WE WILL ASSUME THE BOOT DISK IS A FLOPPY. I AM AWARE THAT THIS IS NOT A GOOD PRACTICE.
+	;;	 PROPER HARD DISK SUPPORT WILL BE IMPLEMENTED AT A LATER DATE.
+	pop bx
+	pop es
+	; To increment the value, we need to check to make sure that the CHS values stay within their limits.
+	mov si, 0003d
+	cmp byte [last_file_chs+si], 18d
+	; If so then we need to carry. Otherwise, we can just increment the sector value and be fine.
+	je  carry_chs_save
+	inc byte [last_file_chs+si]
+	; Now we need to start working on creating the file field.
+	jmp create_new_field
+carry_chs_save:
+	; We need to carry the sector value over, so reset it to zero and add one to the head value. If needed, we
+	; also can carry that, and if we overflow we need to display a "disk full" message to the user.
+	mov byte [last_file_chs+si], 00h
+	dec si
+	cmp byte [last_file_chs+si], 01d
+	je  carry_over_head
+	; Otherwise, increment the head and move right along
+	inc byte [last_file_chs+si]
+	jmp create_new_field
+carry_over_head:
+	mov byte [last_file_chs+si], 00h
+	dec si
+	cmp byte [last_file_chs+si], 79d
+	je disk_full
+	inc byte [last_file_chs+si]
+	jmp create_new_field
+disk_full:
 	mov ah, 01h
-	mov dx, create_entry_ns
+	mov dx, disk_full_msg
 	int 21h
+	pop ds
+	jmp disk_error_save
+	disk_full_msg db "ERR: Attempted to save to a disk that has no space for the file.", 0Dh, 0Ah, 00h
+create_new_field:
+	; We have the needed CHS info to create a new field. All we need to do now is get the length of the file
+	; by looping through it until we hit an EOF.
+	call get_file_length_save
+	; Run through all of the file fields until we reach null space
+	push es
+	push bx
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0008h
+find_null_space:
+	mov ah, byte ptr es:bx
+	cmp ah, 80h
+	je  skip_field
+	cmp ah, 00h
+	je  in_null_space
+	inc bx
+	jmp find_null_space
+skip_field:
+	add bx, 14d
+	jmp find_null_space
+in_null_space:
+	; We should be just pointing at the first null.
+	mov byte ptr es:bx, 80h
+	; Add the CHS values
+	inc bx
+	xor si, si
+	mov ah, byte [last_file_chs+si]
+	mov byte ptr es:bx, ah
+	inc bx
+	inc si
+	mov ah, byte [last_file_chs+si]
+	mov byte ptr es:bx, ah
+	inc bx
+	inc si
+	mov ah, byte [last_file_chs+si]
+	mov byte ptr es:bx, ah
+	inc bx
+	mov si, bx
+	push es
+	pop gs
+	; Now the length
+	mov ah, byte ptr length_save
+	mov byte ptr es:bx, ah
+	pop bx
+	pop es
+	pop ds
+	push es
+	push bx
+	push gs
+	pop es
+	mov bx, si
+	; Now put the filename in there
+	mov cl, 08d
+	xor ch, ch
+	mov si, dx
+add_filename:
+	mov ah, byte ptr ds:si
+	dec cl
+	; Check to see if the char is a null
+	cmp ah, 00h
+	je  pad_filename
+	; Otherwise we need to put the char and continue
+	mov byte ptr es:bx, ah
+	inc bx
+	inc si
+	jmp add_filename
+pad_filename:
+	inc bx
+	mov byte ptr es:bx, 20h
+	loop pad_filename
+	; Now we need to write the EXE flag and end byte
+	inc bx
+	mov byte ptr es:bx, 00h
+	mov byte ptr es:bx, 0FFh
+	; Now write the FSB to disk
+	mov ah, 03h
+	mov al, 01h
+	mov ch, 00h
+	mov dh, 00h
+	mov cl, 02h
+	push ds
+	mov bx, 1000h
+	mov ds, bx
+	mov dl, byte ptr ds:0003h
+	pop ds
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0000h
+	int 13h
+	jc  disk_error_save
+	; Now write the actual file to disk
+	mov ah, 03h
+	push cs
+	pop ds
+	mov al, byte ptr length_save
+	mov si, 0000h
+	mov ch, byte [last_file_chs+si]
+	inc si
+	mov dh, byte [last_file_chs+si]
+	inc si
+	mov cl, byte [last_file_chs+si]
+	push ds
+	mov bx, 1000h
+	mov ds, bx
+	mov dl, byte ptr ds:0003h
+	pop ds
+	pop bx
+	pop es
+	int 13h
+	jc  disk_error_save
+	; We are done.
 	iret
-	create_entry_ns db "WARN: Creating new files is not yet supported!", 0Dh, 0Ah, 00h
+get_file_length_save:
+	pusha
+	mov cx, 0000h
+get_file_length_loop:
+	mov ah, byte ptr es:bx
+	inc cx
+	cmp ah, 0FFh
+	jne get_file_length_loop
+	; Got our length in bytes, now divide it down
+	xor dx, dx
+	mov ax, cx
+	mov cx, 0200h
+	div cx
+	cmp dx, 0000h
+	je  got_file_length_save
+	inc ax
+got_file_length_save:
+	mov byte ptr length_save, al
+	popa
+	ret
+	last_file_chs db 00h,00h,00h
+	length_save db 00h
 	
 get_user_string:
 	popf
@@ -509,4 +810,4 @@ kernel_panic:
 	jmp kernel_panic
 out_in_space:
 
-times 1024-($-$$) db 00h
+times 1536-($-$$) db 00h
