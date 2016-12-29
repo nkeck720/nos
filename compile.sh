@@ -1,14 +1,23 @@
 #!/bin/bash
 #
 # Compiles NOS and optionally writes to a floppy disk
-# 
+#
 
-fasm bootload.asm bootload.bin || exit 1
-fasm fsb.asm fsb.bin || exit 1
-fasm kernel.asm kernel.bin || exit 1
-fasm int21.asm int21.bin || exit 1
-fasm text.asm text.bin || exit 1
-fasm image.asm NOS.img || exit 1
+#
+# Check to see if ./bin exists
+#
+if [ ! -d ./bin ]
+then
+	rm -rf ./bin	# to remove the file if it isn't a dir
+	mkdir ./bin || exit 2
+fi
+
+fasm ./src/bootload.asm ./bin/bootload.bin || exit 1
+fasm ./src/fsb.asm ./bin/fsb.bin || exit 1
+fasm ./src/kernel.asm ./bin/kernel.bin || exit 1
+fasm ./src/int21.asm ./bin/int21.bin || exit 1
+fasm ./src/text.asm ./bin/text.bin || exit 1
+fasm ./src/image.asm ./bin/NOS.img || exit 1
 #
 # Ask the user about the floppy
 #
@@ -16,7 +25,7 @@ echo -e "Compile complete. Do you want me to write out to a floppy (Y/n)? \c"
 read ans
 if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans"="" ]
 then
-    sudo dd if=NOS.img of=/dev/fd0
+    sudo dd if=./bin/NOS.img of=/dev/fd0
     #
     # Notify user in case of failure
     #
