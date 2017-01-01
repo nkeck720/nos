@@ -40,6 +40,16 @@ then
     fi
 fi
 #
+# Ask to compile the DOS program
+#
+echo -e "Would you like to compile the DOS bootstrapper for loading NOS into a DOS environment (Y/n)? \c"
+read ans
+if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans" = "" ]
+then
+	fasm ./dos-bootstrapper/nosboot.asm ./bin/nosboot.exe || exit 1
+	echo "Bootstrapper compiled to ./bin/nosboot.exe"
+fi
+#
 # Otherwise exit sucessfully
 #
 exit 0
