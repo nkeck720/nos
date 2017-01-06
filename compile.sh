@@ -17,28 +17,18 @@ fasm ./src/fsb.asm ./bin/fsb.bin || exit 1
 fasm ./src/kernel.asm ./bin/kernel.bin || exit 1
 fasm ./src/int21.asm ./bin/int21.bin || exit 1
 fasm ./src/text.asm ./bin/text.bin || exit 1
-fasm ./src/image.asm ./bin/NOS.img || exit 1
 #
-# Ask the user about the floppy
+# We have to have the source file in the same dir as the bins
 #
-echo -e "Compile complete. Do you want me to write out to a floppy (Y/n)? \c"
-read ans
-if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans"="" ]
-then
-    sudo dd if=./bin/NOS.img of=/dev/fd0
-    #
-    # Notify user in case of failure
-    #
-    ddret="$?"
-    if [ "$ddret" = 0 ]
-    then
-	echo "dd returned success"
-    else
-	echo "Error occured - dd returned $ddret"
-	echo "Check disk drive /dev/fd0 and try again"
-	exit 1
-    fi
-fi
+cp ./src/image.asm ./bin/image.asm
+fasm ./bin/image.asm ./bin/NOS.img || exit 1
+rm ./bin/image.asm
+
+#
+# I removed this bit because it's pretty trivial to write out a disk image in userspace and
+# because it was causing bugs on systems other than Ubuntu.
+#
+
 #
 # Ask to compile the DOS program
 #
