@@ -21,7 +21,9 @@ fasm ./src/text.asm ./bin/text.bin || exit 1
 # We have to have the source file in the same dir as the bins
 #
 cp ./src/image.asm ./bin/image.asm
-fasm ./bin/image.asm ./bin/NOS.img || exit 1
+cd ./bin
+fasm image.asm ./bin/NOS.img || exit 1
+cd ..
 rm ./bin/image.asm
 
 #
