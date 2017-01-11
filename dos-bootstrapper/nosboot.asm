@@ -39,12 +39,12 @@ start:
 	cmp ax, word 0AA55h
 	jne boot_error
 	; Make sure that the three bytes preceeding that say "NOS"
-	cmp byte ptr es:7DFBh, "N"
-	jne boot_error
-	cmp byte ptr es:7DFCh, "O"
-	jne boot_error
-	cmp byte ptr es:7DFDh, "S"
-	jne boot_error
+	; cmp byte ptr es:7DFBh, "N"
+	; jne boot_error
+	; cmp byte ptr es:7DFCh, "O"
+	; jne boot_error
+	; cmp byte ptr es:7DFDh, "S"
+	; jne boot_error
 	; we are in the clear, so set DL to the boot drive and jump to the
 	; bootloader
 	mov dl, 00h
