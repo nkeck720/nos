@@ -22,7 +22,7 @@ fasm ./src/text.asm ./bin/text.bin || exit 1
 #
 cp ./src/image.asm ./bin/image.asm
 cd ./bin
-fasm image.asm ./bin/NOS.img || exit 1
+fasm image.asm NOS.img || exit 1
 cd ..
 rm ./bin/image.asm
 
