@@ -22,3 +22,6 @@ a.out		# This will ignore my patches' binaries.
 # DOS binaries from the bootstrapper
 *.com
 *.exe
+
+# The bin directory from the compile process
+bin
