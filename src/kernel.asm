@@ -586,6 +586,8 @@ external_command:
 	;; or the file was not found.
 	jc  bad_prog_file
 	;; Now check for a flat or segmented program
+	mov bx, 4000h
+	mov es, bx
 	pop ds			; We get this back now
 	mov ah, byte ptr es:bx
 	cmp ah, "F"
