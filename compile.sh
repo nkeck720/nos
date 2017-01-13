@@ -40,8 +40,10 @@ echo -e "Would you like to compile the DOS bootstrapper for loading NOS into a D
 read ans
 if [ "$ans" = "y" -o "$ans" = "Y" -o "$ans" = "" ]
 then
-	fasm ./dos-bootstrapper/nosboot.asm ./bin/nosboot.exe || exit 1
+	cd dos-bootstrapper
+	fasm nosboot.asm ../bin/nosboot.exe || exit 1
 	echo "Bootstrapper compiled to ./bin/nosboot.exe"
+	cd ..
 fi
 #
 # Otherwise exit sucessfully
