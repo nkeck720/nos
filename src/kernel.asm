@@ -26,7 +26,7 @@
 	boot_drv db 00h 						    ; For saving tho boot drive
 	old_ss dw 0000h 						    ; For saving our old SS locations.
 	old_sp dw 0000h 						    ; Same for old SP.
-	version db "NOS Beta 3 -- built from Git repository", 0Dh, 0Ah, 00h ; Version string
+	version db "NOS Beta 4 -- built from Git repository", 0Dh, 0Ah, 00h ; Version string
 	bootmsg db "Booting up...", 0Dh, 0Ah, 00h				    ; Boot message
 	drv_fname db "DRVS", 00h					    ; Driver list file name
 	blank_line db 0Dh, 0Ah, 00h						    ; A blank line on the screen
