@@ -12,7 +12,6 @@
 	mov ah, 01h
 	mov dx, message
 	int 21h
-	ret					; Return to kernel
 	
 	message db "Hello NOS world!"
 	
