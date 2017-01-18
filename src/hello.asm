@@ -12,7 +12,11 @@
 	mov ah, 01h
 	mov dx, message
 	int 21h
-	ret					; Return to kernel
+	;
+	; Do note that this is the opcode for a FAR RET. If we use a different
+	; opcode we will get unexpected results.
+	;
+	db 0CBh					; Return to kernel
 	
 	message db "Hello NOS world!"
 	
