@@ -32,7 +32,6 @@
 	blank_line db 0Dh, 0Ah, 00h						    ; A blank line on the screen
 	prompt db "NOS> ", 00h						    ; Command prompt
 	bad_command db "That command doesn't exist, or cannot be found.", 0Dh, 0Ah, 00h 	    ; Bad command message
-	ret_opcode equ 0CBh						    ; A RET is a single-byte instruction, so we store it here for later
 	old_dx dw 0000h 						    ; For loading segmented stuff
 	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
 	message db "Listing of boot disk:", 0Dh, 0Ah, 00h
@@ -657,11 +656,8 @@ remove_footer_flat:
 	dec bx
 	dec bx
 	; We are now poining at the byte of the "E"
-	; Place a RET here so that the program will return from execution safely
-	mov byte ptr es:bx, ret_opcode
+	mov byte ptr es:bx, 00h
 	inc bx
-	; Now pointing at the "F"
-	; save these two as NULLs
 	mov byte ptr es:bx, 00h
 	inc bx
 	mov byte ptr es:bx, 00h
