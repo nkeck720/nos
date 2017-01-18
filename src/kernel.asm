@@ -588,6 +588,7 @@ external_command:
 	;; Now check for a flat or segmented program
 	mov bx, 4000h
 	mov es, bx
+	mov bx, 0000h
 	pop ds			; We get this back now
 	mov ah, byte ptr es:bx
 	cmp ah, "F"
