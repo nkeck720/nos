@@ -12,7 +12,7 @@
 	mov ah, 01h
 	mov dx, message
 	int 21h
-	
+	db 0CBh
 	message db "Hello NOS world!"
 	
 ;----------------------------------
