@@ -693,10 +693,8 @@ clear_code_flat:
 	loop clear_code_flat
 	; Now return to the prompt.
 	pop ds
-	mov ax, [old_ss]
-	mov bx, [old_sp]
-	mov ss, ax
-	mov sp, bx
+	push cs
+	pop ds
 	jmp command_prompt
 no_flat_footer:
 	; No footer was detected in the program.

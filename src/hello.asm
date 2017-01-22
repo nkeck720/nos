@@ -13,7 +13,7 @@
 	mov dx, message
 	int 21h
 	db 0CBh
-	message db "Hello NOS world!"
+	message db "Hello NOS world!", 0Dh, 0Ah, 00h
 	
 ;----------------------------------
 	footer db "EF", 0FFh
