@@ -10,6 +10,8 @@ message db "Syncing FSB to disk...", 0Dh, 0Ah, 00h
 errormsg db "OOPS! A write error occured! Check your disk", 0Dh, 0Ah
 		 db "and try again.", 0Dh, 0Ah, 00h
 start:
+	push cs
+	pop ds
 	mov ah, 01h
 	mov dx, message
 	int 21h
