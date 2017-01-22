@@ -27,11 +27,18 @@
 	db "text", 00h, "   "
 	db 00h
 	db 0FFh
-	; Example program
+	; Example programs
 	db 80h
 	db 00h, 00h, 0Bh
 	db 01h
 	db "hello", 00h, "  "
+	db 80h
+	db 0FFh
+	
+	db 80h
+	db 00h, 00h, 0Ch
+	db 01h
+	db "sync", 00h, "   "
 	db 80h
 	db 0FFh
 	
