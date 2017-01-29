@@ -40,4 +40,6 @@ error_writing:
 	int 21h
 	db 0CBh
 	
+	db "EF", 0FFh
+	
 times 512-($-$$) db 0			; Keep it at one sector
