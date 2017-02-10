@@ -36,12 +36,6 @@ int 21h
 mov ah, 06h
 mov dx, garbage
 int 21h
-; Begin by formatting tracks one at a time in a loop
-mov ah, 01h
-mov dx, formatting
-int 21h
-
-
 ; Now write out the bootloader
 mov ah, 01h
 mov dx, writing
