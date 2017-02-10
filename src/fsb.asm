@@ -42,6 +42,12 @@
 	db 80h
 	db 0FFh
 	
+	db 80h
+	db 00h, 00h, 0Dh
+	db 03h
+	db "format", 00h, " "
+	db 80h
+	db 0FFh
 	
 
 times 511-($-$$) db 00h
