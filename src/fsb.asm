@@ -6,7 +6,7 @@
 	db 00h
 	db 03h
 	;; Length of kernel in blocks (0FFh here means no kernel on disk)
-	db 04h
+	db 05h
 	;; free blocks
 	dw 2875d
 	;; total blocks
@@ -15,35 +15,35 @@
 
 	;; INT21 must be our first file here. Otherwise the kernel will not boot.
 	db 80h			; Start of field
-	db 00h, 00h, 07h	; CHS of INT21
+	db 00h, 00h, 08h	; CHS of INT21
 	db 03h			; INT21 will be 1536 bytes
 	db "INT21", 00h, "  "	; Filename and padding
 	db 00h			; EXE flag
 	db 0FFh 		; End field
 	; Example text file for use with type command
 	db 80h
-	db 00h, 00h, 0Ah
+	db 00h, 00h, 0Bh
 	db 01h
 	db "text", 00h, "   "
 	db 00h
 	db 0FFh
 	; Example programs
 	db 80h
-	db 00h, 00h, 0Bh
+	db 00h, 00h, 0Ch
 	db 01h
 	db "hello", 00h, "  "
 	db 80h
 	db 0FFh
 	
 	db 80h
-	db 00h, 00h, 0Ch
+	db 00h, 00h, 0Dh
 	db 01h
 	db "sync", 00h, "   "
 	db 80h
 	db 0FFh
 	
 	db 80h
-	db 00h, 00h, 0Dh
+	db 00h, 00h, 0Eh
 	db 03h
 	db "format", 00h, " "
 	db 80h

@@ -37,6 +37,7 @@
 	message db "Listing of boot disk:", 0Dh, 0Ah, 00h
 	no_type_name db "No filename given, abort.", 0Dh, 0Ah, 00h
 	error_load_type db "Could not find file, abort.", 0Dh, 0Ah, 00h
+	dsk_chg_message db "Disk change detected. Try that command again.", 0Dh, 0Ah, 00h
 start:
 	pop dx			; Get our boot drive
 	push cs
@@ -1010,6 +1011,10 @@ api_load_error:
 	int 10h
 	jmp halt_forever
 disk_error:
+	; We need to be able to differentiate between a disk change
+	; and an error here.
+	cmp ah, 06h
+	je  disk_change
 	xor bh, bh
 	mov ah, 0Eh
 	mov al, 'D'
@@ -1028,6 +1033,26 @@ disk_error:
 	int 10h
 	int 10h
 	jmp halt_forever
+disk_change:
+	pusha
+	; This should be post-API.
+	mov ah, 01h
+	mov dx, dsk_chg_message
+	int 21h
+	; Load in new FSB
+	mov ah, 02h
+	mov al, 01h
+	mov ch, 00h
+	mov dh, 00h
+	mov cl, 01h
+	mov dl, [boot_drv]
+	mov bx, 2000h
+	mov es, bx
+	mov bx, 0000h
+	int 13h
+	popa
+	clc
+	jmp command_prompt
 drv_error:
 	xor bh, bh
 	mov ah, 0Eh
@@ -1220,4 +1245,4 @@ drv_nofile:
 	int 21h
 	; Skip past driver processing
 	jmp command_prompt
-times 2048-($-$$) db 00h
+times 2560-($-$$) db 00h
