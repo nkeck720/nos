@@ -78,7 +78,8 @@ non_sys_disk:
 	mov al, 'R'
 	int 10h
 	int 10h 		;Char should still be in AL
-	jmp stop
+	; Boot from next available device
+	int 18h
 int13_err:
 	xor bx, bx
 	mov ah, 0Eh
