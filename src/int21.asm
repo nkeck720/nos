@@ -795,7 +795,7 @@ get_string_done:
 	iret
 nos_version:
 	popf
-	mov cx, "B4"
+	mov cx, "B5"
 	mov al, "0"
 	iret
 kernel_panic:
