@@ -545,6 +545,8 @@ type_error:
 	pop ax
 	pop ax
 	pop ax
+	push cs
+	pop ds
 	mov ah, 01h
 	mov dx, error_load_type
 	int 21h
