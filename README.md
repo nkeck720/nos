@@ -7,7 +7,7 @@ NOS requires an Intel 80386 or better with at least one megabyte of RAM, and at 
 # How do I compile this operating system?
 For Windows, you have to compile each file by itself. It doesn't matter what order you compile them in, except image.asm should come LAST, after you have compiled every other source file. Then, optionally, you can rename image.bin to image.img. The resulting image is a 1.44MB floppy disk image.
 
-In Unix/Linux/BSD, make sure you have fasm in your $PATH. Once you have done that, run compile.sh and image.img should be left behind in the compile directory. Optionally, the script will allow you to write the 1.44MB image to the floppy disk in /dev/fd0. THIS WRITING METHOD DOES NOT WORK WITH MOST USB FLOPPY DISK DRIVES. DO NOT USE THIS SCRIPT TO ATTEMPT TO WRITE TO USB FLOPPY DISK DRIVES.
+In Unix/Linux/BSD, make sure you have fasm in your $PATH. Once you have done that, run compile.sh and image.img should be left behind in the compile directory.
 
 # Questions?
 
