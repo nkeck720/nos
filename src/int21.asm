@@ -765,6 +765,8 @@ get_user_string:
 	; Args:
 	; DS:DX - address to save string at
 	mov si, dx
+	; Keep the original si pointer for destructive backspace tracking
+	mov word [get_string_pointer], si
 get_char_loop:
 	; Start by getting a char
 	mov ah, 00h
@@ -772,6 +774,9 @@ get_char_loop:
 	; Check to see if AL is a CR
 	cmp al, 0Dh
 	je  get_string_done
+	; Check to see if it is backspace
+	cmp al, 08h
+	je  get_string_backspace
 	; Otherwise copy the char and begin again
 	mov [ds:si], al
 	inc si
@@ -793,6 +798,20 @@ get_string_done:
 	pop bx
 	pop ax
 	iret
+	get_string_pointer dw 0000h
+get_string_backspace:
+	; Check if we are at the pointer yet
+	mov ax, word ptr get_string_pointer
+	cmp ax, si
+	; If true, do nothing
+	je  get_char_loop
+	; Otherwise we will move the pointer back one and print the BS
+	mov ah, 0Eh
+	mov al, 08h
+	int 10h
+	dec si
+	; Now return
+	jmp get_char_loop
 nos_version:
 	popf
 	mov cx, "B5"
