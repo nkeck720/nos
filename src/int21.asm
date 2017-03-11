@@ -810,6 +810,13 @@ get_string_backspace:
 	mov al, 08h
 	int 10h
 	dec si
+	; Now replace the character we backspaced onto with a blank space
+	mov ah, 0Eh
+	mov al, 20h
+	int 10h
+	mov ah, 0Eh
+	mov al, 08h ;To move it back to the cursor's new position
+	int 10h
 	; Now return
 	jmp get_char_loop
 nos_version:
