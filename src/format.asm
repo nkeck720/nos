@@ -7,7 +7,7 @@ db "F"
 jmp start
 message db "NOS format program 1.0", 0Dh, 0Ah, 00h
 prompt	db "Insert a high density disk to format and press RETURN", 0Dh, 0Ah, 00h
-formatting db "Formattting...", 0Dh, 0Ah, 00h
+formatting db "Formatting...", 0Dh, 0Ah, 00h
 writing db "Writing NOSFS...", 0Dh, 0Ah, 00h
 ; Start by displaying a startup message
 start:
@@ -36,6 +36,37 @@ int 21h
 mov ah, 06h
 mov dx, garbage
 int 21h
+; Write garbage to the disk, to make sure all data is gone
+mov ah, 01h
+mov dx, formatting
+int 21h
+mov bx, 1000h
+mov ds, bx
+mov cx, 80d		; For 80 tracks
+format_loop:
+push cx
+mov ah, 03h
+mov al, 18d		; 18 Sectors per track in an HD floppy
+pop cx
+push cx
+mov ch, cl
+mov cl, 01h
+mov dh, 00h
+mov dl, byte ptr ds:0003h
+int 13h
+mov ah, 03h
+mov al, 18d		
+pop cx
+push cx
+mov ch, cl
+mov cl, 01h
+mov dh, 01h
+mov dl, byte ptr ds:0003h
+int 13h
+pop cx
+loop format_loop
+push cs
+pop ds
 ; Now write out the bootloader
 mov ah, 01h
 mov dx, writing
