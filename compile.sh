@@ -20,6 +20,7 @@ fasm ./src/text.asm ./bin/text.bin || exit 1
 fasm ./src/hello.asm ./bin/hello.bin || exit 1
 fasm ./src/sync.asm ./bin/sync.bin || exit 1
 fasm ./src/format.asm ./bin/format.bin || exit 1
+fasm ./src/chglog.asm ./bin/chglog.bin || exit 1
 
 #
 # We have to have the source file in the same dir as the bins

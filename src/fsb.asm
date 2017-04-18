@@ -49,6 +49,13 @@
 	db 80h
 	db 0FFh
 	
+	db 80h
+	db 00h, 00h, 0Fh
+	db 01h
+	db "chglog", 00h, " "
+	db 80h
+	db 0FFh
+	
 
 times 511-($-$$) db 00h
 db 0FFh
