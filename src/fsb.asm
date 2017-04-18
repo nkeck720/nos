@@ -50,7 +50,7 @@
 	db 0FFh
 	
 	db 80h
-	db 00h, 00h, 0Fh
+	db 00h, 00h, 11h
 	db 02h
 	db "chglog", 00h, " "
 	db 80h
