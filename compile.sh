@@ -4,6 +4,16 @@
 #
 
 #
+# Check for an argument called "clean"
+#
+if [ "$1" = "clean" ]
+then
+    echo "Cleaning build dir..."
+    rm -rf ./bin
+    exit
+fi
+
+#
 # Check to see if ./bin exists
 #
 if [ ! -d ./bin ]
