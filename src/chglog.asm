@@ -95,6 +95,7 @@ check_pri_flop:
 	push cs
 	pop es
 	int 13h
+	call check_dc
 	jc  disk_error
 	mov byte ptr ndisk, 00h
 	jmp switch
@@ -108,6 +109,7 @@ check_sec_flop:
 	push cs
 	pop es
 	int 13h
+	call check_dc
 	jc  disk_error
 	mov byte ptr ndisk, 01h
 	jmp switch
@@ -121,6 +123,7 @@ check_hdd:
 	push cs
 	pop es
 	int 13h
+	call check_dc
 	jc  disk_error
 	mov byte ptr ndisk, 80h
 	jmp switch
@@ -151,6 +154,14 @@ switch:
 	mov dx, success
 	int 21h
 	jmp exit
+check_dc:
+	cmp ah, 06h
+	je  change_line
+	stc
+	ret
+change_line:
+	clc
+	ret
 disk_error:
 	mov ah, 01h
 	mov dx, failure
