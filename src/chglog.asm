@@ -88,7 +88,8 @@ disk_switch:
 check_pri_flop:
 	mov ah, 02h
 	mov al, 01h
-	mov cx, 0000h
+	mov ch, 00h
+	mov cl, 01h
 	mov dh, 00h
 	mov dl, 00h
 	mov bx, garbage
@@ -102,7 +103,8 @@ check_pri_flop:
 check_sec_flop:
 	mov ah, 02h
 	mov al, 01h
-	mov cx, 0000h
+	mov ch, 00h
+	mov cl, 01h
 	mov dh, 00h
 	mov dl, 01h
 	mov bx, garbage
@@ -116,7 +118,8 @@ check_sec_flop:
 check_hdd:
 	mov ah, 02h
 	mov al, 01h
-	mov cx, 0000h
+	mov ch, 00h
+	mov cl, 01h
 	mov dh, 00h
 	mov dl, 80h
 	mov bx, garbage
