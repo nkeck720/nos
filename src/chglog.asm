@@ -14,8 +14,16 @@ hard	db "Hard Disk", 0Dh, 0Ah, 00h
 prompt 	db "Pick disk to switch to, or enter 'C' to cancel (0,1,H): ", 00h
 success db "Successfully changed disks.", 0Dh, 0Ah, 00h
 failure db "Unable to change disks. Check drives and try again.", 0Dh, 0Ah, 00h
-invalid db "Invalid selection, please try again.", 0Dh, 0Ah, 00h
+invalid_sel db "Invalid selection, please try again.", 0Dh, 0Ah, 00h
 same	db "You cannot change to the current drive!", 0Dh, 0Ah, 00h
+invalid db "Attempted to switch do a drive that doesn't exist.", 0Dh, 0Ah, 00h
+unformatted db "Disk in target drive is not low-level formatted!", 0Dh, 0Ah, 00h
+dmaover db "DMA overrun!", 0Dh, 0Ah, 00h
+dma64   db "Disk read crossed 64KB DMA boundary.", 0Dh, 0Ah, 00h
+badsect db "Bad FSB sector on target disk!", 0Dh, 0Ah, 00h
+badtrack db "Bad track 0 on target disk!", 0Dh, 0Ah, 00h
+nodisk  db "No disk media in target drive.", 0Dh, 0Ah, 00h
+contfail db "Disk controller error.", 0Dh, 0Ah, 00h
 cdisk	db 00h
 ndisk   db 00h
 newline db 0Dh, 0Ah, 00h
@@ -83,7 +91,7 @@ disk_switch:
 	je  check_hdd
 	; Otherwise tell the user they selected an invalid disk
 	mov ah, 01h
-	mov dx, invalid
+	mov dx, invalid_sel
 	int 21h
 check_pri_flop:
 	mov ah, 02h
@@ -96,8 +104,7 @@ check_pri_flop:
 	push cs
 	pop es
 	int 13h
-	call check_dc
-	jc  disk_error
+	call disk_error
 	mov byte ptr ndisk, 00h
 	jmp switch
 check_sec_flop:
@@ -111,8 +118,7 @@ check_sec_flop:
 	push cs
 	pop es
 	int 13h
-	call check_dc
-	jc  disk_error
+	call disk_error
 	mov byte ptr ndisk, 01h
 	jmp switch
 check_hdd:
@@ -126,8 +132,7 @@ check_hdd:
 	push cs
 	pop es
 	int 13h
-	call check_dc
-	jc  disk_error
+	call disk_error
 	mov byte ptr ndisk, 80h
 	jmp switch
 switch:
@@ -157,17 +162,75 @@ switch:
 	mov dx, success
 	int 21h
 	jmp exit
-check_dc:
-	cmp ah, 06h
-	je  change_line
-	stc
-	ret
-change_line:
-	clc
-	ret
 disk_error:
+	; Check to see if there was an error (in AH)
+	cmp ah, 00h
+	je  return_disk_error
+	; Check for disk change status
+	cmp ah, 06h
+	je  return_disk_error
+	; Otherwise return the appropriate error
+	cmp ah, 01h
+	je  invalid_disk
+	cmp ah, 04h
+	je  unformatted_disk
+	cmp ah, 08h
+	je  dma_overrun
+	cmp ah, 09h
+	je  dma_64_bound
+	cmp ah, 0Ah
+	je  bad_sector
+	cmp ah, 0Bh
+	je  bad_track
+	cmp ah, 0Ch
+	je  no_media
+	cmp ah, 20h
+	je  controller_failed
+	; Otherwise use a generic fail message
 	mov ah, 01h
 	mov dx, failure
+	int 21h
+	jmp exit
+return_disk_error:
+	ret
+invalid_disk:
+	mov ah, 01h
+	mov dx, invalid
+	int 21h
+	jmp exit
+unformatted_disk:
+	mov ah, 01h
+	mov dx, unformatted
+	int 21h
+	jmp exit
+dma_overrun:
+	mov ah, 01h
+	mov dx, dmaover
+	int 21h
+	jmp exit
+dma_64_bound:
+	mov ah, 01h
+	mov dx, dma64
+	int 21h
+	jmp exit
+bad_sector:
+	mov ah, 01h
+	mov dx, badsect
+	int 21h
+	jmp exit
+bad_track:
+	mov ah, 01h
+	mov dx, badtrack
+	int 21h
+	jmp exit
+no_media:
+	mov ah, 01h
+	mov dx, nodisk
+	int 21h
+	jmp exit
+controller_failed:
+	mov ah, 01h
+	mov dx, contfail
 	int 21h
 	jmp exit
 same_disk:
@@ -180,4 +243,4 @@ exit:
 	db 0CBh
 db "EF", 0FFh
 garbage:
-times 1024-($-$$) db 0
+times 1536-($-$$) db 0
