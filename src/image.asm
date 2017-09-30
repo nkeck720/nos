@@ -7,5 +7,6 @@
 	file 'hello.bin'	 ;Example programs
 	file 'sync.bin'
 	file 'format.bin'
+	file 'chglog.bin'
 	times 1474560-($-$$) db 0
 	
