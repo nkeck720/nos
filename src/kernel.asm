@@ -689,7 +689,9 @@ remove_footer_flat:
 	; When we return here, we clear out the segment
 	; Set up a loop to do so
 	mov cx, 0
-	; ES is already set
+	; Make sure ES is set
+	mov bx, 4000h
+	mov es, bx
 clear_code_flat:
 	mov bx, cx
 	mov byte ptr es:bx, 00h
