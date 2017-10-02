@@ -5,9 +5,9 @@ NOS is a simple operating system that is written in FASM syntax. It was created 
 NOS requires an Intel 80386 or better with at least one megabyte of RAM, and at least one 1.44MB floppy disk drive. The original intent was for this to run on an IBM AT, however the 80286 doesn't have some of the instructions that I need. These are, of course, minimum requirements.
 
 # How do I compile this operating system?
-For Windows, you have to compile each file by itself. It doesn't matter what order you compile them in, except image.asm should come LAST, after you have compiled every other source file. Then, optionally, you can rename image.bin to image.img. The resulting image is a 1.44MB floppy disk image.
+For Windows, you have to compile each file by itself. It doesn't matter what order you compile them in, except image.asm should come LAST, after you have compiled every other source file. Then, optionally, you can rename image.bin to NOS.img. The resulting image is a 1.44MB floppy disk image.
 
-In Unix/Linux/BSD, make sure you have fasm in your $PATH. Once you have done that, run compile.sh and image.img should be left behind in the compile directory.
+In Unix/Linux/BSD, make sure you have fasm in your $PATH. Once you have done that, run compile.sh and NOS.img should be left behind in the compile directory.
 
 # Questions?
 
