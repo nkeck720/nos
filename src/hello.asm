@@ -4,7 +4,7 @@
 	; It also will serve as a template of sorts for
 	; flat programs.
 	;
-	
+	use16
 	header db "F"		; Flat structure
 	; Begin the code
 	push cs
