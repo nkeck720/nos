@@ -44,13 +44,13 @@
 	
 	db 80h
 	db 00h, 00h, 0Eh
-	db 03h
+	db 04h
 	db "format", 00h, " "
 	db 80h
 	db 0FFh
 	
 	db 80h
-	db 00h, 00h, 11h
+	db 00h, 00h, 12h
 	db 03h
 	db "chglog", 00h, " "
 	db 80h

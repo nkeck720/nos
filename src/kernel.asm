@@ -34,7 +34,7 @@
 	bad_command db "That command doesn't exist, or cannot be found.", 0Dh, 0Ah, 00h 	    ; Bad command message
 	old_dx dw 0000h 						    ; For loading segmented stuff
 	missing_drvs db "No DRVS file present, skipping", 0Dh, 0Ah, 00h
-	message db "Listing of boot disk:", 0Dh, 0Ah, 00h
+	message db "Listing of logged disk:", 0Dh, 0Ah, 00h
 	no_type_name db "No filename given, abort.", 0Dh, 0Ah, 00h
 	error_load_type db "Could not find file, abort.", 0Dh, 0Ah, 00h
 	dsk_chg_message db "Disk change detected. Try that command again.", 0Dh, 0Ah, 00h
