@@ -1,6 +1,7 @@
 ;
 ; FORMAT.ASM - This serves as a program to format disks under NOS to NOSFS.
 ;
+use16
 
 ; Begin with the flat header
 db "F"
