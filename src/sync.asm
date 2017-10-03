@@ -2,7 +2,7 @@
 ; SYNC.ASM - a command that makes sure that the currrent RAM image of the 
 ;			 NOS FSB is saved to disk.
 ;
-
+use16
 ; Begin by defining a flat architecture
 db "F"
 jmp start
